@@ -13,7 +13,7 @@ export default function InventoryTable() {
   const [expandSales, setExpandSales] = useState(false);
 
   useEffect(() => {
-    fetch(API_URL)
+    fetch('/.netlify/functions/getInventoryFromGoogle')
         .then(res => res.text()) // Get raw HTML as string
         .then(html => {
         const parser = new DOMParser();

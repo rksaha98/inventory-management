@@ -1,7 +1,8 @@
 [build]
-  functions = "netlify/functions"
   publish = "dist"
+  functions = "netlify/functions"
 
 [dev]
-  command = "vite"
-  port = 5173
+  framework = "vite"
+  targetPort = 5173     # Vite's dev server
+  port = 9999           # Netlify Dev server
