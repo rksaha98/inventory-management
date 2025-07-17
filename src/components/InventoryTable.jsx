@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const API_URL = 'https://script.google.com/macros/s/AKfycby4uqRjezllKgWUE6RoDCVWiosedhF4U0dL8l5CUh4kNoc2Ltox6p99HWU6vHfoaPTP7w/exec';
+const API_URL = '/.netlify/functions/getInventory';
 
 const buyColor = '#16a34a'; // green-600
 const sellColor = '#ea580c'; // orange-600
