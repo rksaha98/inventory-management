@@ -14,13 +14,17 @@ export default function InventoryTable() {
 
   useEffect(() => {
     fetch(API_URL)
-        .then(res => res.json())
-        .then(json => {
-        console.log("Fetched Inventory Summary:", json);
+        .then(res => res.text()) // Get raw HTML as string
+        .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const jsonText = doc.body.textContent;
+        const json = JSON.parse(jsonText);
         setData(json);
+        console.log("✅ Inventory data loaded:", json);
         })
         .catch(err => {
-        console.error("Error fetching inventory data:", err);
+        console.error("❌ Error fetching inventory data:", err);
         });
     }, []);
 
