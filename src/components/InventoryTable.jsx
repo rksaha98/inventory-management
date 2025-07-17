@@ -14,10 +14,15 @@ export default function InventoryTable() {
 
   useEffect(() => {
     fetch(API_URL)
-      .then(res => res.json())
-      .then(setData)
-      .catch(console.error);
-  }, []);
+        .then(res => res.json())
+        .then(json => {
+        console.log("Fetched Inventory Summary:", json);
+        setData(json);
+        })
+        .catch(err => {
+        console.error("Error fetching inventory data:", err);
+        });
+    }, []);
 
   return (
     <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 mb-8">
