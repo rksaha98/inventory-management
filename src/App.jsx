@@ -1,10 +1,11 @@
+import React from 'react';
+import InventoryTable from './components/InventoryTable';
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-blue-600">Inventory App Deployed!</h1>
-        <p className="mt-2 text-gray-700">If you're seeing this, Netlify deployment works 🎉</p>
-      </div>
+    <div className="min-h-screen w-full flex flex-col items-center justify-start bg-gradient-to-b from-blue-100 to-pink-100 py-10">
+      <h1 className="text-4xl font-bold text-center text-blue-800 mb-10">Sarada PaintHouse Inventory</h1>
+      <InventoryTable />
     </div>
   );
 }
