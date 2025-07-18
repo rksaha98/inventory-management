@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-
-const API_URL = '/.netlify/functions/getInventory';
+const API_URL = '/.netlify/functions/getInventoryFromGoogle';
 
 const buyColor = '#16a34a'; // green-600
 const sellColor = '#ea580c'; // orange-600
@@ -10,25 +9,29 @@ const lowStockColor = '#f43f5e'; // rose-600
 
 export default function InventoryTable() {
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [expandPurchase, setExpandPurchase] = useState(false);
   const [expandSales, setExpandSales] = useState(false);
 
   useEffect(() => {
-    fetch('/.netlify/functions/getInventoryFromGoogle')
-        .then(res => res.json())
-        .then((data) => {
-        if (!Array.isArray(data)) {
-            console.error("Invalid data format:", data);
-            setInventory([]); // or show error UI
-            return;
+    fetch(API_URL)
+      .then(res => res.json())
+      .then((resData) => {
+        if (!Array.isArray(resData)) {
+          setError("Invalid data format");
+          setData([]);
+        } else {
+          setData(resData);
         }
-        setInventory(data);
-        })
-        .catch((error) => {
-        console.error("❌ Error fetching inventory data:", error);
-        });
-    }, []);
-
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("❌ Error fetching inventory data:", err);
+        setError("Failed to load inventory");
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 mb-8">
@@ -84,10 +87,32 @@ export default function InventoryTable() {
             </tr>
           </thead>
           <tbody>
-            {data.map((item, idx) => {
+            {loading && (
+              <tr>
+                <td colSpan="10" className="p-4 text-center text-gray-400">Loading data...</td>
+              </tr>
+            )}
+
+            {!loading && error && (
+              <tr>
+                <td colSpan="10" className="p-4 text-center text-red-600">{error}</td>
+              </tr>
+            )}
+
+            {!loading && !error && data.length === 0 && (
+              <tr>
+                <td colSpan="10" className="p-4 text-center text-gray-400">No data found</td>
+              </tr>
+            )}
+
+            {!loading && !error && data.map((item, idx) => {
               const isLowStock = Number(item['In Stock']) <= lowStockThreshold;
               return (
-                <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} style={isLowStock ? { backgroundColor: lowStockColor + '22' } : {}}>
+                <tr
+                  key={idx}
+                  className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+                  style={isLowStock ? { backgroundColor: lowStockColor + '22' } : {}}
+                >
                   <td className="p-2 font-medium">{item['Item Type']}</td>
                   <td className="p-2">{item['Description']}</td>
                   <td className="p-2">{item['In Stock']}</td>
@@ -109,9 +134,6 @@ export default function InventoryTable() {
                 </tr>
               );
             })}
-            {data.length === 0 && (
-              <tr><td className="p-4 text-center text-gray-400" colSpan="10">Loading data...</td></tr>
-            )}
           </tbody>
         </table>
       </div>
