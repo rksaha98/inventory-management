@@ -15,19 +15,20 @@ export default function InventoryTable() {
 
   useEffect(() => {
     fetch('/.netlify/functions/getInventoryFromGoogle')
-        .then(res => res.text()) // Get raw HTML as string
-        .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const jsonText = doc.body.textContent;
-        const json = JSON.parse(jsonText);
-        setData(json);
-        console.log("✅ Inventory data loaded:", json);
+        .then(res => res.json())
+        .then((data) => {
+        if (!Array.isArray(data)) {
+            console.error("Invalid data format:", data);
+            setInventory([]); // or show error UI
+            return;
+        }
+        setInventory(data);
         })
-        .catch(err => {
-        console.error("❌ Error fetching inventory data:", err);
+        .catch((error) => {
+        console.error("❌ Error fetching inventory data:", error);
         });
     }, []);
+
 
   return (
     <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 mb-8">
