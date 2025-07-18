@@ -27,3 +27,5 @@ dist-ssr
 .netlify
 
 **/credentials.json
+# ignore service account keys
+netlify/functions/credentials.json
