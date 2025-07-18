@@ -1,11 +1,12 @@
-import { google } from 'googleapis';
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
+const { google } = require('googleapis');
 
-export async function handler(event, context) {
+exports.handler = async function (event, context) {
   try {
-    // Load credentials from the JSON key
-    const keyPath = path.resolve('netlify/functions/credentials.json');
+    const keyPath = path.resolve(__dirname, 'credentials.json');
+    console.log("📁 Loading credentials from:", keyPath);
+
     const credentials = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
 
     const auth = new google.auth.GoogleAuth({
@@ -15,16 +16,12 @@ export async function handler(event, context) {
 
     const sheets = google.sheets({ version: 'v4', auth });
 
-    const spreadsheetId = '1Ow9JvAqOeAcJMqD-aKhkwOYGrdDiF-VeoaUcqacF7KM'; // <-- replace with your actual Sheet ID
-    const range = 'Inventory Summary!A1:I';       // Adjust range based on your sheet layout
+    const spreadsheetId = '1Ow9JvAqOeAcJMqD-aKhkwOYGrdDiF-VeoaUcqacF7KM'; // ✅ Replace with your actual ID
+    const range = 'Inventory Summary!A1:I';
 
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range,
-    });
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
 
     const [headers, ...rows] = response.data.values;
-
     const formatted = rows.map(row => {
       const obj = {};
       headers.forEach((header, i) => {
@@ -43,10 +40,10 @@ export async function handler(event, context) {
     };
 
   } catch (err) {
-    console.error('❌ Google Sheets fetch error:', err.message);
+    console.error('❌ Error in getInventoryFromGoogle:', err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
     };
   }
-}
+};
