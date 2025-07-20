@@ -22,7 +22,15 @@ export default function TransactionTable() {
       const res = await fetch(API_URL);
       const json = await res.json();
       if (!Array.isArray(json)) throw new Error('Invalid data format');
-      setTransactions(json.reverse()); // Latest first
+      // Sort by Timestamp (latest first), fallback to ID if needed
+      const sorted = [...json].sort((a, b) => {
+        const aTime = new Date(a.Timestamp || a.timestamp || 0).getTime();
+        const bTime = new Date(b.Timestamp || b.timestamp || 0).getTime();
+        if (!isNaN(aTime) && !isNaN(bTime)) return bTime - aTime;
+        // fallback to ID (assume numeric)
+        return (b.ID || b.id || 0) - (a.ID || a.id || 0);
+      });
+      setTransactions(sorted);
     } catch (err) {
       console.error('❌ Error fetching transactions:', err);
     }
@@ -54,14 +62,28 @@ export default function TransactionTable() {
 
   const handleEditSave = async () => {
     try {
+      // Map frontend keys to backend expected keys
+      const payload = {
+        id: editData.ID,
+        transactionType: editData['Transaction Type'],
+        itemType: editData['Item Type'],
+        itemDescription: editData['Item Description'],
+        quantity: editData['Quantity'],
+        price: editData['Price'],
+        timestamp: editData['Timestamp'],
+        mode: editData['Mode'],
+        note: editData['Note']
+      };
       const res = await fetch(EDIT_URL, {
         method: 'POST',
-        body: JSON.stringify(editData)
+        body: JSON.stringify(payload)
       });
       const result = await res.json();
       if (result.success) {
         setEditId(null);
         fetchTransactions();
+      } else {
+        console.error('❌ Save error:', result.error);
       }
     } catch (err) {
       console.error('❌ Error saving edit:', err);
@@ -148,8 +170,8 @@ export default function TransactionTable() {
                       <input className="input" value={editData['Note']} onChange={e => handleEditChange('Note', e.target.value)} />
                     </td>
                     <td className="p-2">
-                      <button className="text-green-600 mr-2" onClick={handleEditSave}>💾</button>
-                      <button className="text-gray-500" onClick={() => setEditId(null)}>✖</button>
+                      <button className="text-green-600 hover:underline mr-2" onClick={handleEditSave}>Save</button>
+                      <button className="text-gray-500 hover:underline" onClick={() => setEditId(null)}>Cancel</button>
                     </td>
                   </>
                 ) : (
@@ -164,8 +186,8 @@ export default function TransactionTable() {
                     <td className="p-2">{t.Mode}</td>
                     <td className="p-2">{t.Note}</td>
                     <td className="p-2">
-                      <button className="text-blue-600 mr-2" onClick={() => handleEdit(t.ID)}>✏️</button>
-                      <button className="text-red-600" onClick={() => handleDelete(t.ID)}>🗑️</button>
+                      <button className="text-blue-600 hover:underline mr-2" onClick={() => handleEdit(t.ID)}>Edit</button>
+                      <button className="text-red-600 hover:underline" onClick={() => handleDelete(t.ID)}>Delete</button>
                     </td>
                   </>
                 )}
