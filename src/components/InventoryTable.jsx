@@ -1,142 +1,195 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-const API_URL = '/.netlify/functions/getInventoryFromGoogle';
+const PURCHASE_COLS = [
+  { key: "totalPurchased", label: "Total Purchased" },
+  { key: "avgPurchasePrice", label: "Avg Purchase Price" },
+  { key: "totalPurchaseValue", label: "Total Purchase Value" },
+];
+const SALES_COLS = [
+  { key: "totalSold", label: "Total Sold" },
+  { key: "avgSalePrice", label: "Avg Sale Price" },
+  { key: "totalSalesValue", label: "Total Sales Value" },
+];
 
-const buyColor = '#16a34a'; // green-600
-const sellColor = '#ea580c'; // orange-600
-const lowStockThreshold = 5;
-const lowStockColor = '#f43f5e'; // rose-600
+function aggregateInventory(transactions) {
+  const summary = {};
+  transactions.forEach((row) => {
+    const {
+      "Item Type": itemType,
+      "Item Description": itemDescription,
+      "Transaction Type": type,
+      Quantity,
+      Price,
+    } = row;
+    if (!itemType || !itemDescription) return;
+    const key = `${itemType}|||${itemDescription}`;
+    if (!summary[key]) {
+      summary[key] = {
+        itemType,
+        itemDescription,
+        totalPurchased: 0,
+        totalPurchaseValue: 0,
+        purchasePrices: [],
+        totalSold: 0,
+        totalSalesValue: 0,
+        salePrices: [],
+      };
+    }
+    if (type === "Add") {
+      summary[key].totalPurchased += Number(Quantity);
+      summary[key].totalPurchaseValue += Number(Quantity) * Number(Price);
+      summary[key].purchasePrices.push(Number(Price));
+    } else if (type === "Sell") {
+      summary[key].totalSold += Number(Quantity);
+      summary[key].totalSalesValue += Number(Quantity) * Number(Price);
+      summary[key].salePrices.push(Number(Price));
+    }
+  });
+
+  // Calculate averages and in stock
+  return Object.values(summary).map((item) => {
+    const avgPurchasePrice =
+      item.purchasePrices.length > 0
+        ? (
+            item.totalPurchaseValue /
+            (item.totalPurchased || 1)
+          ).toFixed(2)
+        : "-";
+    const avgSalePrice =
+      item.salePrices.length > 0
+        ? (
+            item.totalSalesValue /
+            (item.totalSold || 1)
+          ).toFixed(2)
+        : "-";
+    return {
+      ...item,
+      inStock: item.totalPurchased - item.totalSold,
+      avgPurchasePrice,
+      avgSalePrice,
+      totalPurchaseValue: item.totalPurchaseValue.toFixed(2),
+      totalSalesValue: item.totalSalesValue.toFixed(2),
+    };
+  });
+}
 
 export default function InventoryTable() {
   const [data, setData] = useState([]);
+  const [showPurchase, setShowPurchase] = useState(true);
+  const [showSales, setShowSales] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [expandPurchase, setExpandPurchase] = useState(false);
-  const [expandSales, setExpandSales] = useState(false);
 
   useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then((resData) => {
-        if (!Array.isArray(resData)) {
-          setError("Invalid data format");
-          setData([]);
-        } else {
-          setData(resData);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("❌ Error fetching inventory data:", err);
-        setError("Failed to load inventory");
-        setLoading(false);
-      });
+    async function fetchTransactions() {
+      setLoading(true);
+      try {
+        const res = await fetch("/.netlify/functions/getTransactionsFromGoogle");
+        const json = await res.json();
+        setData(Array.isArray(json) ? json : []);
+      } catch (err) {
+        setData([]);
+      }
+      setLoading(false);
+    }
+    fetchTransactions();
   }, []);
 
+  const summary = aggregateInventory(data);
+
+  // Optional: sort by inStock descending, then by itemDescription
+  summary.sort(
+    (a, b) =>
+      b.inStock - a.inStock ||
+      a.itemDescription.localeCompare(b.itemDescription)
+  );
+
   return (
-    <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 mb-8">
-      <h2 className="text-2xl font-bold mb-4 text-blue-600">📦 Inventory Summary</h2>
-
-      <div className="flex gap-4 mb-4">
+    <div className="p-4 max-w-6xl mx-auto">
+      <div className="flex flex-wrap gap-2 mb-4">
         <button
-          className="px-4 py-1 rounded border text-sm font-semibold"
-          style={{
-            backgroundColor: expandPurchase ? buyColor : '#e5f9ec',
-            color: expandPurchase ? '#fff' : buyColor,
-            borderColor: buyColor
-          }}
-          onClick={() => setExpandPurchase(!expandPurchase)}
+          className={`px-3 py-1 rounded ${
+            showPurchase
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700"
+          }`}
+          onClick={() => setShowPurchase((v) => !v)}
         >
-          {expandPurchase ? 'Hide Purchase Details' : 'Show Purchase Details'}
+          {showPurchase ? "Hide" : "Show"} Purchase Details
         </button>
-
         <button
-          className="px-4 py-1 rounded border text-sm font-semibold"
-          style={{
-            backgroundColor: expandSales ? sellColor : '#ffeadd',
-            color: expandSales ? '#fff' : sellColor,
-            borderColor: sellColor
-          }}
-          onClick={() => setExpandSales(!expandSales)}
+          className={`px-3 py-1 rounded ${
+            showSales ? "bg-green-600 text-white" : "bg-gray-200 text-gray-700"
+          }`}
+          onClick={() => setShowSales((v) => !v)}
         >
-          {expandSales ? 'Hide Sales Details' : 'Show Sales Details'}
+          {showSales ? "Hide" : "Show"} Sales Details
         </button>
       </div>
-
       <div className="overflow-x-auto">
-        <table className="table-auto w-full text-sm border-collapse">
-          <thead className="bg-gray-100 text-left">
-            <tr>
-              <th className="p-2">Item Type</th>
-              <th className="p-2">Item Description</th>
-              <th className="p-2">In Stock</th>
-              {expandPurchase && (
-                <>
-                  <th className="p-2 border-l-2" style={{ color: buyColor }}>Total Purchased</th>
-                  <th className="p-2" style={{ color: buyColor }}>Avg Purchase Price</th>
-                  <th className="p-2" style={{ color: buyColor }}>Total Purchase Value</th>
-                </>
-              )}
-              {expandSales && (
-                <>
-                  <th className="p-2 border-l-2" style={{ color: sellColor }}>Total Sold</th>
-                  <th className="p-2" style={{ color: sellColor }}>Avg Sale Price</th>
-                  <th className="p-2" style={{ color: sellColor }}>Total Sales Value</th>
-                </>
-              )}
+        <table className="min-w-full border rounded shadow bg-white">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="px-3 py-2 border">Item Type</th>
+              <th className="px-3 py-2 border">Item Description</th>
+              <th className="px-3 py-2 border">In Stock</th>
+              {showPurchase &&
+                PURCHASE_COLS.map((col) => (
+                  <th key={col.key} className="px-3 py-2 border">
+                    {col.label}
+                  </th>
+                ))}
+              {showSales &&
+                SALES_COLS.map((col) => (
+                  <th key={col.key} className="px-3 py-2 border">
+                    {col.label}
+                  </th>
+                ))}
             </tr>
           </thead>
           <tbody>
-            {loading && (
+            {loading ? (
               <tr>
-                <td colSpan="10" className="p-4 text-center text-gray-400">Loading data...</td>
+                <td colSpan={3 + (showPurchase ? 3 : 0) + (showSales ? 3 : 0)} className="text-center py-6">
+                  Loading...
+                </td>
               </tr>
-            )}
-
-            {!loading && error && (
+            ) : summary.length === 0 ? (
               <tr>
-                <td colSpan="10" className="p-4 text-center text-red-600">{error}</td>
+                <td colSpan={3 + (showPurchase ? 3 : 0) + (showSales ? 3 : 0)} className="text-center py-6">
+                  No inventory data.
+                </td>
               </tr>
-            )}
-
-            {!loading && !error && data.length === 0 && (
-              <tr>
-                <td colSpan="10" className="p-4 text-center text-gray-400">No data found</td>
-              </tr>
-            )}
-
-            {!loading && !error && data.map((item, idx) => {
-              const isLowStock = Number(item['In Stock']) <= lowStockThreshold;
-              return (
+            ) : (
+              summary.map((item) => (
                 <tr
-                  key={idx}
-                  className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
-                  style={isLowStock ? { backgroundColor: lowStockColor + '22' } : {}}
+                  key={item.itemType + item.itemDescription}
+                  className={
+                    item.inStock <= 5
+                      ? "bg-rose-100"
+                      : ""
+                  }
                 >
-                  <td className="p-2 font-medium">{item['Item Type']}</td>
-                  <td className="p-2">{item['Item Description']}</td>
-                  <td className="p-2">{item['In Stock']}</td>
-
-                  {expandPurchase && (
-                    <>
-                      <td className="p-2 border-l-2">{item['Total Purchased']}</td>
-                      <td className="p-2">₹{Number(item['Avg Purchase Price']).toFixed(2)}</td>
-                      <td className="p-2">₹{Number(item['Total Purchase Value']).toFixed(2)}</td>
-                    </>
-                  )}
-                  {expandSales && (
-                    <>
-                      <td className="p-2 border-l-2">{item['Total Sold']}</td>
-                      <td className="p-2">₹{Number(item['Avg Sale Price']).toFixed(2)}</td>
-                      <td className="p-2">₹{Number(item['Total Sales Value']).toFixed(2)}</td>
-                    </>
-                  )}
+                  <td className="px-3 py-2 border">{item.itemType}</td>
+                  <td className="px-3 py-2 border">{item.itemDescription}</td>
+                  <td className="px-3 py-2 border font-semibold">{item.inStock}</td>
+                  {showPurchase &&
+                    PURCHASE_COLS.map((col) => (
+                      <td key={col.key} className="px-3 py-2 border">
+                        {item[col.key]}
+                      </td>
+                    ))}
+                  {showSales &&
+                    SALES_COLS.map((col) => (
+                      <td key={col.key} className="px-3 py-2 border">
+                        {item[col.key]}
+                      </td>
+                    ))}
                 </tr>
-              );
-            })}
+              ))
+            )}
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }
