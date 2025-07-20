@@ -1,5 +1,6 @@
 // File: components/TransactionTable.jsx
 import React, { useEffect, useState } from 'react';
+import formatDateDMYTimeSec from './formatDateDMYTimeSec';
 
 const API_URL = '/.netlify/functions/getTransactionsFromGoogle';
 const DELETE_URL = '/.netlify/functions/deleteTransaction';
@@ -8,6 +9,7 @@ const EDIT_URL = '/.netlify/functions/editTransaction';
 export default function TransactionTable() {
   const [transactions, setTransactions] = useState([]);
   const [filterType, setFilterType] = useState('All');
+  const [filterDate, setFilterDate] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [editId, setEditId] = useState(null);
@@ -90,9 +92,18 @@ export default function TransactionTable() {
     }
   };
 
-  const filtered = filterType === 'All'
-    ? transactions
-    : transactions.filter(t => t['Transaction Type'] === filterType);
+
+  // Filter by type and date
+  let filtered = transactions;
+  if (filterType !== 'All') {
+    filtered = filtered.filter(t => t['Transaction Type'] === filterType);
+  }
+  if (filterDate) {
+    filtered = filtered.filter(t => {
+      // Accepts YYYY-MM-DD, matches start of ISO string
+      return (t.Timestamp || '').slice(0, 10) === filterDate;
+    });
+  }
 
   const paginated = filtered.slice(
     (currentPage - 1) * rowsPerPage,
@@ -106,7 +117,7 @@ export default function TransactionTable() {
       <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-blue-600">🧾 Transaction Logs</h2>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <select
             className="border px-2 py-1 rounded"
             value={filterType}
@@ -116,6 +127,14 @@ export default function TransactionTable() {
             <option value="Add">Add</option>
             <option value="Sell">Sell</option>
           </select>
+
+          <input
+            type="date"
+            className="border px-2 py-1 rounded"
+            value={filterDate}
+            onChange={e => setFilterDate(e.target.value)}
+            max={new Date().toISOString().slice(0, 10)}
+          />
 
           <input
             type="number"
@@ -128,66 +147,72 @@ export default function TransactionTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="table-auto w-full text-sm border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2">ID</th>
-              <th className="p-2">Transaction Type</th>
-              <th className="p-2">Item Type</th>
-              <th className="p-2">Item Description</th>
-              <th className="p-2">Quantity</th>
-              <th className="p-2">Price</th>
-              <th className="p-2">Timestamp</th>
-              <th className="p-2">Mode</th>
-              <th className="p-2">Note</th>
-              <th className="p-2">Actions</th>
+        <table className="w-full text-sm border-separate rounded-lg shadow-md bg-white">
+          <thead>
+            <tr className="bg-gray-100 border-b border-gray-200">
+              <th className="p-3 text-gray-700 font-semibold">ID</th>
+              <th className="p-3 text-gray-700 font-semibold">Tran Type</th>
+              <th className="p-3 text-gray-700 font-semibold">Item Type</th>
+              <th className="p-3 text-gray-700 font-semibold">Item Description</th>
+              <th className="p-3 text-gray-700 font-semibold">Qty</th>
+              <th className="p-3 text-gray-700 font-semibold">Price</th>
+              <th className="p-3 text-gray-700 font-semibold">Timestamp</th>
+              <th className="p-3 text-gray-700 font-semibold">Mode</th>
+              <th className="p-3 text-gray-700 font-semibold">Note</th>
+              <th className="p-3 text-gray-700 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
+            {paginated.length === 0 && (
+              <tr><td colSpan={10} className="text-center text-gray-400 py-8">No transactions</td></tr>
+            )}
             {paginated.map((t, idx) => (
-              <tr key={t.ID} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <tr key={t.ID} className={
+                `${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} ` +
+                'border-b border-gray-100 hover:bg-blue-50 transition-colors duration-100'
+              }>
                 {editId === t.ID ? (
                   <>
-                    <td className="p-2 font-mono text-xs">{t.ID}</td>
-                    <td className="p-2">{t['Transaction Type']}</td>
-                    <td className="p-2">
-                      <input className="input" value={editData['Item Type']} onChange={e => handleEditChange('Item Type', e.target.value)} />
+                    <td className="p-3 font-mono text-xs align-middle">{t.ID}</td>
+                    <td className="p-3 align-middle">{t['Transaction Type']}</td>
+                    <td className="p-3 align-middle">
+                      <input className="border rounded px-2 py-1 w-full" value={editData['Item Type']} onChange={e => handleEditChange('Item Type', e.target.value)} />
                     </td>
-                    <td className="p-2">
-                      <input className="input" value={editData['Item Description']} onChange={e => handleEditChange('Item Description', e.target.value)} />
+                    <td className="p-3 align-middle">
+                      <input className="border rounded px-2 py-1 w-full" value={editData['Item Description']} onChange={e => handleEditChange('Item Description', e.target.value)} />
                     </td>
-                    <td className="p-2">
-                      <input type="number" className="input" value={editData['Quantity']} onChange={e => handleEditChange('Quantity', e.target.value)} />
+                    <td className="p-3 align-middle">
+                      <input type="number" className="border rounded px-2 py-1 w-full" value={editData['Quantity']} onChange={e => handleEditChange('Quantity', e.target.value)} />
                     </td>
-                    <td className="p-2">
-                      <input type="number" className="input" value={editData['Price']} onChange={e => handleEditChange('Price', e.target.value)} />
+                    <td className="p-3 align-middle">
+                      <input type="number" className="border rounded px-2 py-1 w-full" value={editData['Price']} onChange={e => handleEditChange('Price', e.target.value)} />
                     </td>
-                    <td className="p-2">{t.Timestamp}</td>
-                    <td className="p-2">
-                      <input className="input" value={editData['Mode']} onChange={e => handleEditChange('Mode', e.target.value)} />
+                    <td className="p-3 align-middle">{formatDateDMYTimeSec(editData['Timestamp'] || t.Timestamp)}</td>
+                    <td className="p-3 align-middle">
+                      <input className="border rounded px-2 py-1 w-full" value={editData['Mode']} onChange={e => handleEditChange('Mode', e.target.value)} />
                     </td>
-                    <td className="p-2">
-                      <input className="input" value={editData['Note']} onChange={e => handleEditChange('Note', e.target.value)} />
+                    <td className="p-3 align-middle">
+                      <input className="border rounded px-2 py-1 w-full" value={editData['Note']} onChange={e => handleEditChange('Note', e.target.value)} />
                     </td>
-                    <td className="p-2">
-                      <button className="text-green-600 hover:underline mr-2" onClick={handleEditSave}>Save</button>
-                      <button className="text-gray-500 hover:underline" onClick={() => setEditId(null)}>Cancel</button>
+                    <td className="p-3 align-middle flex gap-1">
+                      <button className="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded" onClick={handleEditSave}>Save</button>
+                      <button className="text-xs bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded" onClick={() => setEditId(null)}>Cancel</button>
                     </td>
                   </>
                 ) : (
                   <>
-                    <td className="p-2 font-mono text-xs">{t.ID}</td>
-                    <td className="p-2">{t['Transaction Type']}</td>
-                    <td className="p-2">{t['Item Type']}</td>
-                    <td className="p-2">{t['Item Description']}</td>
-                    <td className="p-2">{t.Quantity}</td>
-                    <td className="p-2">₹{Number(t.Price).toFixed(2)}</td>
-                    <td className="p-2">{t.Timestamp}</td>
-                    <td className="p-2">{t.Mode}</td>
-                    <td className="p-2">{t.Note}</td>
-                    <td className="p-2">
-                      <button className="text-blue-600 hover:underline mr-2" onClick={() => handleEdit(t.ID)}>Edit</button>
-                      <button className="text-red-600 hover:underline" onClick={() => handleDelete(t.ID)}>Delete</button>
+                    <td className="p-3 font-mono text-xs align-middle">{t.ID}</td>
+                    <td className="p-3 align-middle">{t['Transaction Type']}</td>
+                    <td className="p-3 align-middle">{t['Item Type']}</td>
+                    <td className="p-3 align-middle">{t['Item Description']}</td>
+                    <td className="p-3 align-middle">{t.Quantity}</td>
+                    <td className="p-3 align-middle">₹{Number(t.Price).toFixed(2)}</td>
+                    <td className="p-3 align-middle">{formatDateDMYTimeSec(t.Timestamp)}</td>
+                    <td className="p-3 align-middle">{t.Mode}</td>
+                    <td className="p-3 align-middle">{t.Note}</td>
+                    <td className="p-3 align-middle flex gap-1">
+                      <button className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded" onClick={() => handleEdit(t.ID)}>Edit</button>
+                      <button className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded" onClick={() => handleDelete(t.ID)}>Delete</button>
                     </td>
                   </>
                 )}
