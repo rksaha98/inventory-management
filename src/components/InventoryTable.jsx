@@ -68,7 +68,7 @@ export default function InventoryTable() {
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-2">Item Type</th>
-              <th className="p-2">Description</th>
+              <th className="p-2">Item Description</th>
               <th className="p-2">In Stock</th>
               {expandPurchase && (
                 <>
@@ -114,7 +114,7 @@ export default function InventoryTable() {
                   style={isLowStock ? { backgroundColor: lowStockColor + '22' } : {}}
                 >
                   <td className="p-2 font-medium">{item['Item Type']}</td>
-                  <td className="p-2">{item['Description']}</td>
+                  <td className="p-2">{item['Item Description']}</td>
                   <td className="p-2">{item['In Stock']}</td>
 
                   {expandPurchase && (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function AddItemForm() {
+export default function SellItemForm() {
   const [form, setForm] = useState({
     itemType: '',
     itemDescription: '',
@@ -21,7 +21,7 @@ export default function AddItemForm() {
 
     setStatus('Submitting...');
     try {
-      const res = await fetch('/.netlify/functions/addItemToGoogle', {
+      const res = await fetch('/.netlify/functions/sellItemToGoogle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -29,10 +29,10 @@ export default function AddItemForm() {
 
       const result = await res.json();
       if (res.ok) {
-        setStatus('✅ Item added successfully!');
+        setStatus('✅ Item sold successfully!');
         setForm({ itemType: '', itemDescription: '', quantity: '', price: '', mode: '', note: '' });
       } else {
-        throw new Error(result.error || 'Failed to add item');
+        throw new Error(result.error || 'Failed to sell item');
       }
     } catch (err) {
       setStatus(`❌ Error: ${err.message}`);
@@ -41,18 +41,18 @@ export default function AddItemForm() {
 
   return (
     <section className="w-full max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6 mb-8">
-      <h2 className="text-xl font-bold mb-4 text-green-600">➕ Add Item</h2>
+      <h2 className="text-xl font-bold mb-4 text-orange-600">🛒 Sell Item</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <input name="itemType" value={form.itemType} onChange={handleChange} placeholder="Item Type" required className="input" />
           <input name="itemDescription" value={form.itemDescription} onChange={handleChange} placeholder="Item Description" required className="input" />
           <input type="number" name="quantity" value={form.quantity} onChange={handleChange} placeholder="Quantity" required className="input" />
-          <input type="number" name="price" value={form.price} onChange={handleChange} placeholder="Purchase Price" required className="input" />
+          <input type="number" name="price" value={form.price} onChange={handleChange} placeholder="Sale Price" required className="input" />
           <input name="mode" value={form.mode} onChange={handleChange} placeholder="Mode (e.g. Cash/UPI)" className="input" />
           <input name="note" value={form.note} onChange={handleChange} placeholder="Note (optional)" className="input" />
         </div>
-        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded font-semibold">Add Item</button>
+        <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded font-semibold">Sell Item</button>
       </form>
 
       {status && <p className="mt-4 text-sm text-gray-700">{status}</p>}
