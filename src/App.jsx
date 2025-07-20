@@ -2,6 +2,7 @@ import React from 'react';
 import InventoryTable from './components/InventoryTable';
 import AddItemForm from './components/AddItemForm';
 import SellItemForm from './components/SellItemForm';
+import TransactionTable from './components/TransactionTable';
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <h1 className="text-4xl font-bold text-center text-blue-800 mb-10">Sarada PaintHouse Inventory</h1>
       <AddItemForm />
       <SellItemForm />
+      <TransactionTable />
       <InventoryTable />
     </div>
   );
