@@ -1,77 +1,15 @@
 import React, { useEffect, useState } from "react";
 
 const PURCHASE_COLS = [
-  { key: "totalPurchased", label: "Total Purchased" },
-  { key: "avgPurchasePrice", label: "Avg Purchase Price" },
-  { key: "totalPurchaseValue", label: "Total Purchase Value" },
+  { key: "Total Purchased", label: "Total Purchased" },
+  { key: "Avg Purchase Price", label: "Avg Purchase Price" },
+  { key: "Total Purchase Value", label: "Total Purchase Value" },
 ];
 const SALES_COLS = [
-  { key: "totalSold", label: "Total Sold" },
-  { key: "avgSalePrice", label: "Avg Sale Price" },
-  { key: "totalSalesValue", label: "Total Sales Value" },
+  { key: "Total Sold", label: "Total Sold" },
+  { key: "Avg Sale Price", label: "Avg Sale Price" },
+  { key: "Total Sales Value", label: "Total Sales Value" },
 ];
-
-function aggregateInventory(transactions) {
-  const summary = {};
-  transactions.forEach((row) => {
-    const {
-      "Item Type": itemType,
-      "Item Description": itemDescription,
-      "Transaction Type": type,
-      Quantity,
-      Price,
-    } = row;
-    if (!itemType || !itemDescription) return;
-    const key = `${itemType}|||${itemDescription}`;
-    if (!summary[key]) {
-      summary[key] = {
-        itemType,
-        itemDescription,
-        totalPurchased: 0,
-        totalPurchaseValue: 0,
-        purchasePrices: [],
-        totalSold: 0,
-        totalSalesValue: 0,
-        salePrices: [],
-      };
-    }
-    if (type === "Add") {
-      summary[key].totalPurchased += Number(Quantity);
-      summary[key].totalPurchaseValue += Number(Quantity) * Number(Price);
-      summary[key].purchasePrices.push(Number(Price));
-    } else if (type === "Sell") {
-      summary[key].totalSold += Number(Quantity);
-      summary[key].totalSalesValue += Number(Quantity) * Number(Price);
-      summary[key].salePrices.push(Number(Price));
-    }
-  });
-
-  // Calculate averages and in stock
-  return Object.values(summary).map((item) => {
-    const avgPurchasePrice =
-      item.purchasePrices.length > 0
-        ? (
-            item.totalPurchaseValue /
-            (item.totalPurchased || 1)
-          ).toFixed(2)
-        : "-";
-    const avgSalePrice =
-      item.salePrices.length > 0
-        ? (
-            item.totalSalesValue /
-            (item.totalSold || 1)
-          ).toFixed(2)
-        : "-";
-    return {
-      ...item,
-      inStock: item.totalPurchased - item.totalSold,
-      avgPurchasePrice,
-      avgSalePrice,
-      totalPurchaseValue: item.totalPurchaseValue.toFixed(2),
-      totalSalesValue: item.totalSalesValue.toFixed(2),
-    };
-  });
-}
 
 export default function InventoryTable() {
   const [data, setData] = useState([]);
@@ -80,10 +18,10 @@ export default function InventoryTable() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchTransactions() {
+    async function fetchSummary() {
       setLoading(true);
       try {
-        const res = await fetch("/.netlify/functions/getTransactionsFromGoogle");
+        const res = await fetch("/.netlify/functions/getInventorySummary");
         const json = await res.json();
         setData(Array.isArray(json) ? json : []);
       } catch (err) {
@@ -91,16 +29,12 @@ export default function InventoryTable() {
       }
       setLoading(false);
     }
-    fetchTransactions();
+    fetchSummary();
   }, []);
 
-  const summary = aggregateInventory(data);
-
-  // Optional: sort by inStock descending, then by itemDescription
-  summary.sort(
-    (a, b) =>
-      b.inStock - a.inStock ||
-      a.itemDescription.localeCompare(b.itemDescription)
+  // Optional: sort by In Stock descending, then by Item Description
+  const summary = [...data].sort(
+    (a, b) => b["In Stock"] - a["In Stock"] || a["Item Description"].localeCompare(b["Item Description"])
   );
 
   return (
@@ -108,9 +42,7 @@ export default function InventoryTable() {
       <div className="flex flex-wrap gap-2 mb-4">
         <button
           className={`px-3 py-1 rounded ${
-            showPurchase
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-700"
+            showPurchase ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
           }`}
           onClick={() => setShowPurchase((v) => !v)}
         >
@@ -162,16 +94,12 @@ export default function InventoryTable() {
             ) : (
               summary.map((item) => (
                 <tr
-                  key={item.itemType + item.itemDescription}
-                  className={
-                    item.inStock <= 5
-                      ? "bg-rose-100"
-                      : ""
-                  }
+                  key={item["Item Type"] + item["Item Description"]}
+                  className={item["In Stock"] <= 5 ? "bg-rose-100" : ""}
                 >
-                  <td className="px-3 py-2 border">{item.itemType}</td>
-                  <td className="px-3 py-2 border">{item.itemDescription}</td>
-                  <td className="px-3 py-2 border font-semibold">{item.inStock}</td>
+                  <td className="px-3 py-2 border">{item["Item Type"]}</td>
+                  <td className="px-3 py-2 border">{item["Item Description"]}</td>
+                  <td className="px-3 py-2 border font-semibold">{item["In Stock"]}</td>
                   {showPurchase &&
                     PURCHASE_COLS.map((col) => (
                       <td key={col.key} className="px-3 py-2 border">
