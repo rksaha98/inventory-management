@@ -26,6 +26,8 @@ function Header() {
 
 function App() {
   const [inventoryData, setInventoryData] = React.useState([]);
+  const [showTransactions, setShowTransactions] = React.useState(false);
+  const logsRef = React.useRef(null);
   React.useEffect(() => {
     async function fetchInventory() {
       try {
@@ -39,13 +41,33 @@ function App() {
     fetchInventory();
   }, []);
 
+  React.useEffect(() => {
+    if (showTransactions && logsRef.current) {
+      logsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showTransactions]);
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-start relative overflow-x-hidden bg-gradient-to-b from-blue-100 to-pink-100 py-10">
       <Header />
       <InventoryTable />
       <EntryForm inventoryData={inventoryData} />
-      
-      <TransactionTable />
+      {/* Show Transactions Button */}
+      <div className="w-full max-w-xl mx-auto mb-4">
+        <button
+          className={`px-4 py-2 rounded shadow text-sm font-medium border transition-colors w-full ${showTransactions ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-white text-gray-700 border-gray-300'}`}
+          onClick={() => setShowTransactions(v => !v)}
+          type="button"
+        >
+          {showTransactions ? 'Hide Transactions' : 'Show Transactions'}
+        </button>
+      </div>
+      {/* Transaction Logs Section */}
+      {showTransactions && (
+        <div ref={logsRef} className="w-full flex flex-col items-center">
+          <TransactionTable />
+        </div>
+      )}
       <SalesSummary />
     </div>
   );

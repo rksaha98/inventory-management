@@ -113,13 +113,12 @@ export default function TransactionTable() {
   const totalPages = Math.ceil(filtered.length / rowsPerPage);
 
   return (
-    <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 mb-8">
-      <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-blue-600">🧾 Transaction Logs</h2>
-
-        <div className="flex gap-2 items-center">
+    <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-0 mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <h2 className="text-xl font-bold text-blue-600 px-0 pb-0">🧾 Transaction Logs</h2>
+        <div className="flex flex-wrap gap-4 items-center">
           <select
-            className="border px-2 py-1 rounded"
+            className="border px-2 py-1 rounded text-sm"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
           >
@@ -127,117 +126,152 @@ export default function TransactionTable() {
             <option value="Add">Add</option>
             <option value="Sell">Sell</option>
           </select>
-
           <input
             type="date"
-            className="border px-2 py-1 rounded"
+            className="border px-2 py-1 rounded text-sm"
             value={filterDate}
             onChange={e => setFilterDate(e.target.value)}
             max={new Date().toISOString().slice(0, 10)}
           />
-
           <input
             type="number"
             min="1"
-            className="border px-2 py-1 rounded w-20"
+            className="border px-2 py-1 rounded w-20 text-sm text-right"
             value={rowsPerPage}
             onChange={(e) => setRowsPerPage(Number(e.target.value))}
           />
         </div>
       </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-separate rounded-lg shadow-md bg-white">
-          <thead>
-            <tr className="bg-gray-100 border-b border-gray-200">
-              <th className="p-3 text-gray-700 font-semibold">ID</th>
-              <th className="p-3 text-gray-700 font-semibold">Tran Type</th>
-              <th className="p-3 text-gray-700 font-semibold">Item Type</th>
-              <th className="p-3 text-gray-700 font-semibold">Item Description</th>
-              <th className="p-3 text-gray-700 font-semibold">Qty</th>
-              <th className="p-3 text-gray-700 font-semibold">Price</th>
-              <th className="p-3 text-gray-700 font-semibold">Timestamp</th>
-              <th className="p-3 text-gray-700 font-semibold">Mode</th>
-              <th className="p-3 text-gray-700 font-semibold">Note</th>
-              <th className="p-3 text-gray-700 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.length === 0 && (
-              <tr><td colSpan={10} className="text-center text-gray-400 py-8">No transactions</td></tr>
-            )}
-            {paginated.map((t, idx) => (
-              <tr key={t.ID} className={
-                `${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} ` +
-                'border-b border-gray-100 hover:bg-blue-50 transition-colors duration-100'
-              }>
-                {editId === t.ID ? (
+      <div className="space-y-3 px-4 py-2 max-h-[60vh] overflow-y-auto">
+        {paginated.length === 0 && (
+          <div className="text-center text-gray-400 py-8">No transactions</div>
+        )}
+        {paginated.map((t) => {
+          const borderColor = t['Transaction Type'] === 'Add'
+            ? 'border-green-300 bg-green-50'
+            : t['Transaction Type'] === 'Sell'
+            ? 'border-red-400 bg-red-50'
+            : 'border-gray-200 bg-white';
+          const isEditing = editId === t.ID;
+          return (
+            <div
+              key={t.ID}
+              className={`relative p-4 rounded-lg shadow border-l-4 ${borderColor} space-y-1 transition-all`}
+            >
+              {/* Actions top-right */}
+              <div className="absolute top-4 right-4 flex gap-2">
+                {isEditing ? (
                   <>
-                    <td className="p-3 font-mono text-xs align-middle">{t.ID}</td>
-                    <td className="p-3 align-middle">{t['Transaction Type']}</td>
-                    <td className="p-3 align-middle">
-                      <input className="border rounded px-2 py-1 w-full" value={editData['Item Type']} onChange={e => handleEditChange('Item Type', e.target.value)} />
-                    </td>
-                    <td className="p-3 align-middle">
-                      <input className="border rounded px-2 py-1 w-full" value={editData['Item Description']} onChange={e => handleEditChange('Item Description', e.target.value)} />
-                    </td>
-                    <td className="p-3 align-middle">
-                      <input type="number" className="border rounded px-2 py-1 w-full" value={editData['Quantity']} onChange={e => handleEditChange('Quantity', e.target.value)} />
-                    </td>
-                    <td className="p-3 align-middle">
-                      <input type="number" className="border rounded px-2 py-1 w-full" value={editData['Price']} onChange={e => handleEditChange('Price', e.target.value)} />
-                    </td>
-                    <td className="p-3 align-middle">{formatDateDMYTimeSec(editData['Timestamp'] || t.Timestamp)}</td>
-                    <td className="p-3 align-middle">
-                      <input className="border rounded px-2 py-1 w-full" value={editData['Mode']} onChange={e => handleEditChange('Mode', e.target.value)} />
-                    </td>
-                    <td className="p-3 align-middle">
-                      <input className="border rounded px-2 py-1 w-full" value={editData['Note']} onChange={e => handleEditChange('Note', e.target.value)} />
-                    </td>
-                    <td className="p-3 align-middle flex gap-1">
-                      <button className="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded" onClick={handleEditSave}>Save</button>
-                      <button className="text-xs bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded" onClick={() => setEditId(null)}>Cancel</button>
-                    </td>
+                    <button
+                      className="bg-green-100 text-green-800 hover:bg-green-200 px-2 py-1 rounded text-xs"
+                      onClick={handleEditSave}
+                    >Save</button>
+                    <button
+                      className="bg-gray-100 text-gray-800 hover:bg-gray-200 px-2 py-1 rounded text-xs"
+                      onClick={() => setEditId(null)}
+                    >Cancel</button>
                   </>
                 ) : (
                   <>
-                    <td className="p-3 font-mono text-xs align-middle">{t.ID}</td>
-                    <td className="p-3 align-middle">{t['Transaction Type']}</td>
-                    <td className="p-3 align-middle">{t['Item Type']}</td>
-                    <td className="p-3 align-middle">{t['Item Description']}</td>
-                    <td className="p-3 align-middle">{t.Quantity}</td>
-                    <td className="p-3 align-middle">₹{Number(t.Price).toFixed(2)}</td>
-                    <td className="p-3 align-middle">{formatDateDMYTimeSec(t.Timestamp)}</td>
-                    <td className="p-3 align-middle">{t.Mode}</td>
-                    <td className="p-3 align-middle">{t.Note}</td>
-                    <td className="p-3 align-middle flex gap-1">
-                      <button className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded" onClick={() => handleEdit(t.ID)}>Edit</button>
-                      <button className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded" onClick={() => handleDelete(t.ID)}>Delete</button>
-                    </td>
+                    <button
+                      className="bg-blue-100 text-blue-800 hover:bg-blue-200 px-2 py-1 rounded text-xs"
+                      title="Edit"
+                      aria-label="Edit"
+                      onClick={() => handleEdit(t.ID)}
+                    >✏️</button>
+                    <button
+                      className="bg-red-100 text-red-800 hover:bg-red-200 px-2 py-1 rounded text-xs"
+                      title="Delete"
+                      aria-label="Delete"
+                      onClick={() => handleDelete(t.ID)}
+                    >🗑️</button>
                   </>
                 )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </div>
+              {/* Card content */}
+              {isEditing ? (
+                <>
+                  <div className="text-sm font-medium text-gray-900">
+                    <span>{t['Transaction Type'] === 'Sell' ? 'Sold' : 'Added'}</span>
+                    <input
+                      type="number"
+                      className="border rounded px-2 py-1 w-16 mx-2 text-sm"
+                      value={editData['Quantity']}
+                      onChange={e => handleEditChange('Quantity', e.target.value)}
+                    />
+                    pcs of
+                    <input
+                      className="border rounded px-2 py-1 w-24 mx-2 text-sm"
+                      value={editData['Item Type']}
+                      onChange={e => handleEditChange('Item Type', e.target.value)}
+                    />
+                    -
+                    <input
+                      className="border rounded px-2 py-1 w-32 mx-2 text-sm"
+                      value={editData['Item Description']}
+                      onChange={e => handleEditChange('Item Description', e.target.value)}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-700 italic mt-1 flex flex-wrap gap-2 items-center">
+                    Price:
+                    <input
+                      type="number"
+                      className="border rounded px-2 py-1 w-20 text-xs mx-1"
+                      value={editData['Price']}
+                      onChange={e => handleEditChange('Price', e.target.value)}
+                    />
+                    |
+                    Mode:
+                    <input
+                      className="border rounded px-2 py-1 w-20 text-xs mx-1"
+                      value={editData['Mode']}
+                      onChange={e => handleEditChange('Mode', e.target.value)}
+                    />
+                    |
+                    Note:
+                    <input
+                      className="border rounded px-2 py-1 w-32 text-xs mx-1"
+                      value={editData['Note']}
+                      onChange={e => handleEditChange('Note', e.target.value)}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {formatDateDMYTimeSec(editData['Timestamp'] || t.Timestamp)}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-sm font-medium text-gray-900">
+                    {t['Transaction Type'] === 'Sell' ? 'Sold' : 'Added'} {t.Quantity} pcs of {t['Item Type']} - {t['Item Description']}
+                  </div>
+                  <div className="text-xs text-gray-700 italic mt-1">
+                    Price: ₹{Number(t.Price).toFixed(2)} | Mode: {t.Mode} | Note: {t.Note}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {formatDateDMYTimeSec(t.Timestamp)}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
-
-      <div className="mt-4 flex justify-between items-center">
-        <p className="text-sm text-gray-600">
+      <div className="mt-4 flex flex-wrap justify-between items-center px-4 pb-4">
+        <p className="text-sm text-gray-600 mb-2 md:mb-0">
           Showing {paginated.length} of {filtered.length} transactions
         </p>
-        <div className="space-x-2">
+        <div className="space-x-2 flex items-center">
           <button
-            className="px-3 py-1 border rounded"
+            className="px-3 py-1 border rounded disabled:opacity-50"
             onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
-          >Previous</button>
+          >« Prev</button>
           <span className="text-sm">Page {currentPage} of {totalPages}</span>
           <button
-            className="px-3 py-1 border rounded"
+            className="px-3 py-1 border rounded disabled:opacity-50"
             onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
-          >Next</button>
+          >Next »</button>
         </div>
       </div>
     </section>
