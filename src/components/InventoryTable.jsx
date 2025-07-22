@@ -33,21 +33,31 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
     fetchSummary();
   }, []);
 
-  // Filtered and sorted summary
-  const summary = data
-    .filter(
-      (item) =>
-        (!typeFilter || item["Item Type"] === typeFilter) &&
-        (!descFilter || item["Item Description"] === descFilter)
-    )
-    .sort(
-      (a, b) => b["In Stock"] - a["In Stock"] || a["Item Description"].localeCompare(b["Item Description"])
-    );
-
   // Unique types/descriptions for filter dropdowns
   const itemTypes = Array.from(new Set(data.map((d) => d["Item Type"])));
 
   const itemDescs = Array.from(new Set(data.map((d) => d["Item Description"])));
+
+  // Dropdown close on click outside
+  useEffect(() => {
+    function handle(e) {
+      if (typeRef.current && !typeRef.current.contains(e.target)) setTypeDropdown(false);
+      if (descRef.current && !descRef.current.contains(e.target)) setDescDropdown(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  // Filtered and sorted summary
+  const summary = data
+    .filter(
+      (item) =>
+        (!typeFilter || item["Item Type"].toLowerCase().includes(typeFilter.toLowerCase())) &&
+        (!descFilter || item["Item Description"].toLowerCase().includes(descFilter.toLowerCase()))
+    )
+    .sort(
+      (a, b) => b["In Stock"] - a["In Stock"] || a["Item Description"].localeCompare(b["Item Description"])
+    );
 
   // Color helpers
   const lighten = (hex, amt) => {
@@ -65,24 +75,10 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
     return `#${c}${Math.round(alpha * 255).toString(16).padStart(2, "0")}`;
   };
 
-  // Dropdown close on click outside
-  useEffect(() => {
-    function handle(e) {
-      if (typeRef.current && !typeRef.current.contains(e.target)) setTypeDropdown(false);
-      if (descRef.current && !descRef.current.contains(e.target)) setDescDropdown(false);
-    }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, []);
-
-  // Calculate if purchase/sales columns should be visually hidden
-  const purchaseHidden = !showPurchase;
-  const salesHidden = !showSales;
-
   // Determine visible columns
   const baseCols = [
-    { key: 'Item Type', label: 'Item Type' },
-    { key: 'Item Description', label: 'Item Description' },
+    { key: 'Item Type', label: 'Item Type', filter: true },
+    { key: 'Item Description', label: 'Item Description', filter: true },
     { key: 'In Stock', label: 'In Stock' },
   ];
   const purchaseCols = [
@@ -158,8 +154,84 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
             <thead>
               <tr className="bg-gray-100">
                 {visibleCols.map((col, i) => (
-                  <th key={col.key} className="px-3 py-2 border-b text-left">
-                    {col.label}
+                  <th key={col.key} className="px-3 py-2 border-b text-left relative">
+                    <span>{col.label}</span>
+                    {/* Filter button for Item Type and Item Description */}
+                    {col.filter && (
+                      <button
+                        className="ml-2 p-1 rounded hover:bg-blue-100 focus:bg-blue-100 border border-transparent focus:outline-none"
+                        title={`Filter ${col.label}`}
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (col.key === 'Item Type') setTypeDropdown(v => !v);
+                          if (col.key === 'Item Description') setDescDropdown(v => !v);
+                        }}
+                        tabIndex={0}
+                        aria-label={`Filter ${col.label}`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0013 13.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 017 17v-3.586a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" /></svg>
+                      </button>
+                    )}
+                    {/* Dropdown for Item Type */}
+                    {col.key === 'Item Type' && typeDropdown && (
+                      <div ref={typeRef} className="absolute bg-white border border-gray-300 rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full">
+                        <input
+                          className="w-full p-1 border border-gray-300 rounded text-sm mb-1"
+                          placeholder="Search Item Type..."
+                          value={typeSearch}
+                          onChange={e => setTypeSearch(e.target.value)}
+                          autoFocus
+                        />
+                        <ul className="max-h-40 overflow-y-auto text-sm">
+                          {itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).map(t => (
+                            <li
+                              key={t}
+                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${typeFilter === t ? 'font-bold text-blue-700' : ''}`}
+                              onClick={() => { setTypeFilter(typeFilter === t ? '' : t); setTypeDropdown(false); setTypeSearch(''); }}
+                            >
+                              {typeFilter === t && <span className="mr-2">✔️</span>}
+                              {t}
+                            </li>
+                          ))}
+                          {typeSearch && itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).length === 0 && (
+                            <li className="px-2 py-1 text-gray-400">No matches</li>
+                          )}
+                        </ul>
+                        <div className="mt-2 text-right">
+                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setTypeFilter(''); setTypeDropdown(false); setTypeSearch(''); }}>Clear Filter</button>
+                        </div>
+                      </div>
+                    )}
+                    {/* Dropdown for Item Description */}
+                    {col.key === 'Item Description' && descDropdown && (
+                      <div ref={descRef} className="absolute bg-white border border-gray-300 rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full">
+                        <input
+                          className="w-full p-1 border border-gray-300 rounded text-sm mb-1"
+                          placeholder="Search Description..."
+                          value={descSearch}
+                          onChange={e => setDescSearch(e.target.value)}
+                          autoFocus
+                        />
+                        <ul className="max-h-40 overflow-y-auto text-sm">
+                          {itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).map(d => (
+                            <li
+                              key={d}
+                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${descFilter === d ? 'font-bold text-blue-700' : ''}`}
+                              onClick={() => { setDescFilter(descFilter === d ? '' : d); setDescDropdown(false); setDescSearch(''); }}
+                            >
+                              {descFilter === d && <span className="mr-2">✔️</span>}
+                              {d}
+                            </li>
+                          ))}
+                          {descSearch && itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).length === 0 && (
+                            <li className="px-2 py-1 text-gray-400">No matches</li>
+                          )}
+                        </ul>
+                        <div className="mt-2 text-right">
+                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setDescFilter(''); setDescDropdown(false); setDescSearch(''); }}>Clear Filter</button>
+                        </div>
+                      </div>
+                    )}
                   </th>
                 ))}
               </tr>

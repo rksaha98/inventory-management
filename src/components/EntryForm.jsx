@@ -243,7 +243,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
             />
           </div>
           <div className="mb-3">
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Price</label>
+            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Price PER ITEM</label>
             <input
               type="number"
               name="price"
@@ -255,7 +255,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
             />
           </div>
           <div className="mb-3">
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Mode of Payment (optional)</label>
+            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Mode of Payment</label>
             <input
               type="text"
               name="paymentMode"
@@ -265,7 +265,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
             />
           </div>
           <div className="mb-4">
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Note (optional)</label>
+            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Note</label>
             <input
               type="text"
               name="note"
