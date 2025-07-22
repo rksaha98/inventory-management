@@ -1,7 +1,6 @@
 import React from 'react';
 import InventoryTable from './components/InventoryTable';
-import AddItemForm from './components/AddItemForm';
-import SellItemForm from './components/SellItemForm';
+import EntryForm from './components/EntryForm';
 import TransactionTable from './components/TransactionTable';
 import SalesSummary from './components/SalesSummary';
 
@@ -26,12 +25,26 @@ function Header() {
 }
 
 function App() {
+  const [inventoryData, setInventoryData] = React.useState([]);
+  React.useEffect(() => {
+    async function fetchInventory() {
+      try {
+        const res = await fetch('/.netlify/functions/getInventorySummary');
+        const json = await res.json();
+        setInventoryData(Array.isArray(json) ? json : []);
+      } catch {
+        setInventoryData([]);
+      }
+    }
+    fetchInventory();
+  }, []);
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-start relative overflow-x-hidden bg-gradient-to-b from-blue-100 to-pink-100 py-10">
       <Header />
       <InventoryTable />
-      <AddItemForm />
-      <SellItemForm />
+      <EntryForm inventoryData={inventoryData} />
+      
       <TransactionTable />
       <SalesSummary />
     </div>
