@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 
 function formatCurrency(num) {
   return "₹" + Number(num).toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -9,12 +9,14 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
   const [loading, setLoading] = useState(true);
   const [showPurchase, setShowPurchase] = useState(true);
   const [showSales, setShowSales] = useState(true);
-  const [typeFilter, setTypeFilter] = useState("");
-  const [descFilter, setDescFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState([]); // Multi-select
+  const [descFilter, setDescFilter] = useState([]); // Multi-select
   const [typeDropdown, setTypeDropdown] = useState(false);
   const [descDropdown, setDescDropdown] = useState(false);
   const [typeSearch, setTypeSearch] = useState("");
   const [descSearch, setDescSearch] = useState("");
+  const [typeActiveIdx, setTypeActiveIdx] = useState(0);
+  const [descActiveIdx, setDescActiveIdx] = useState(0);
   const typeRef = useRef();
   const descRef = useRef();
 
@@ -50,11 +52,11 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
 
   // Filtered and sorted summary
   const summary = data
-    .filter(
-      (item) =>
-        (!typeFilter || item["Item Type"].toLowerCase().includes(typeFilter.toLowerCase())) &&
-        (!descFilter || item["Item Description"].toLowerCase().includes(descFilter.toLowerCase()))
-    )
+    .filter((item) => {
+      const typeMatch = typeFilter.length === 0 || typeFilter.includes(item["Item Type"]);
+      const descMatch = descFilter.length === 0 || descFilter.includes(item["Item Description"]);
+      return typeMatch && descMatch;
+    })
     .sort(
       (a, b) => b["In Stock"] - a["In Stock"] || a["Item Description"].localeCompare(b["Item Description"])
     );
@@ -172,24 +174,60 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0013 13.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 017 17v-3.586a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" /></svg>
                       </button>
                     )}
-                    {/* Dropdown for Item Type */}
+                    {/* Dropdown for Item Type (multi-select, keyboard nav) */}
                     {col.key === 'Item Type' && typeDropdown && (
                       <div ref={typeRef} className="absolute bg-white border border-gray-300 rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full">
                         <input
                           className="w-full p-1 border border-gray-300 rounded text-sm mb-1"
                           placeholder="Search Item Type..."
                           value={typeSearch}
-                          onChange={e => setTypeSearch(e.target.value)}
+                          onChange={e => { setTypeSearch(e.target.value); setTypeActiveIdx(0); }}
                           autoFocus
+                          onKeyDown={e => {
+                            const filtered = itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase()));
+                            if (e.key === 'ArrowDown') {
+                              setTypeActiveIdx(i => Math.min(i + 1, filtered.length));
+                              e.preventDefault();
+                            } else if (e.key === 'ArrowUp') {
+                              setTypeActiveIdx(i => Math.max(i - 1, 0));
+                              e.preventDefault();
+                            } else if (e.key === 'Enter' || e.key === ' ') {
+                              if (typeActiveIdx === 0) {
+                                // Select All
+                                if (typeFilter.length === filtered.length) setTypeFilter([]);
+                                else setTypeFilter(filtered);
+                              } else {
+                                const t = filtered[typeActiveIdx - 1];
+                                if (!t) return;
+                                setTypeFilter(f => f.includes(t) ? f.filter(x => x !== t) : [...f, t]);
+                              }
+                              e.preventDefault();
+                            } else if (e.key === 'Escape' || e.key === 'Tab') {
+                              setTypeDropdown(false);
+                            }
+                          }}
                         />
-                        <ul className="max-h-40 overflow-y-auto text-sm">
-                          {itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).map(t => (
+                        <ul className="max-h-40 overflow-y-auto text-sm" tabIndex={-1}>
+                          <li
+                            className={`px-2 py-1 cursor-pointer flex items-center ${typeActiveIdx === 0 ? 'bg-blue-100 font-bold' : ''}`}
+                            onMouseEnter={() => setTypeActiveIdx(0)}
+                            onClick={() => {
+                              const filtered = itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase()));
+                              if (typeFilter.length === filtered.length) setTypeFilter([]);
+                              else setTypeFilter(filtered);
+                            }}
+                          >
+                            <input type="checkbox" className="mr-2" readOnly checked={typeFilter.length === itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).length && typeFilter.length > 0} />
+                            <span>{typeFilter.length === itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).length && typeFilter.length > 0 ? 'Unselect All' : 'Select All'}</span>
+                          </li>
+                          {itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).map((t, idx) => (
                             <li
                               key={t}
-                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${typeFilter === t ? 'font-bold text-blue-700' : ''}`}
-                              onClick={() => { setTypeFilter(typeFilter === t ? '' : t); setTypeDropdown(false); setTypeSearch(''); }}
+                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${typeFilter.includes(t) ? 'font-bold text-blue-700' : ''} ${typeActiveIdx === idx + 1 ? 'bg-blue-100' : ''}`}
+                              onMouseEnter={() => setTypeActiveIdx(idx + 1)}
+                              onClick={() => setTypeFilter(f => f.includes(t) ? f.filter(x => x !== t) : [...f, t])}
                             >
-                              {typeFilter === t && <span className="mr-2">✔️</span>}
+                              <input type="checkbox" className="mr-2" readOnly checked={typeFilter.includes(t)} />
                               {t}
                             </li>
                           ))}
@@ -197,29 +235,65 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                             <li className="px-2 py-1 text-gray-400">No matches</li>
                           )}
                         </ul>
-                        <div className="mt-2 text-right">
-                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setTypeFilter(''); setTypeDropdown(false); setTypeSearch(''); }}>Clear Filter</button>
+                        <div className="mt-2 flex justify-between">
+                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setTypeFilter([]); setTypeDropdown(false); setTypeSearch(''); }}>Clear</button>
+                          <button className="text-xs text-blue-600 hover:underline" onClick={() => setTypeDropdown(false)}>Done</button>
                         </div>
                       </div>
                     )}
-                    {/* Dropdown for Item Description */}
+                    {/* Dropdown for Item Description (multi-select, keyboard nav) */}
                     {col.key === 'Item Description' && descDropdown && (
                       <div ref={descRef} className="absolute bg-white border border-gray-300 rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full">
                         <input
                           className="w-full p-1 border border-gray-300 rounded text-sm mb-1"
                           placeholder="Search Description..."
                           value={descSearch}
-                          onChange={e => setDescSearch(e.target.value)}
+                          onChange={e => { setDescSearch(e.target.value); setDescActiveIdx(0); }}
                           autoFocus
+                          onKeyDown={e => {
+                            const filtered = itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase()));
+                            if (e.key === 'ArrowDown') {
+                              setDescActiveIdx(i => Math.min(i + 1, filtered.length));
+                              e.preventDefault();
+                            } else if (e.key === 'ArrowUp') {
+                              setDescActiveIdx(i => Math.max(i - 1, 0));
+                              e.preventDefault();
+                            } else if (e.key === 'Enter' || e.key === ' ') {
+                              if (descActiveIdx === 0) {
+                                if (descFilter.length === filtered.length) setDescFilter([]);
+                                else setDescFilter(filtered);
+                              } else {
+                                const d = filtered[descActiveIdx - 1];
+                                if (!d) return;
+                                setDescFilter(f => f.includes(d) ? f.filter(x => x !== d) : [...f, d]);
+                              }
+                              e.preventDefault();
+                            } else if (e.key === 'Escape' || e.key === 'Tab') {
+                              setDescDropdown(false);
+                            }
+                          }}
                         />
-                        <ul className="max-h-40 overflow-y-auto text-sm">
-                          {itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).map(d => (
+                        <ul className="max-h-40 overflow-y-auto text-sm" tabIndex={-1}>
+                          <li
+                            className={`px-2 py-1 cursor-pointer flex items-center ${descActiveIdx === 0 ? 'bg-blue-100 font-bold' : ''}`}
+                            onMouseEnter={() => setDescActiveIdx(0)}
+                            onClick={() => {
+                              const filtered = itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase()));
+                              if (descFilter.length === filtered.length) setDescFilter([]);
+                              else setDescFilter(filtered);
+                            }}
+                          >
+                            <input type="checkbox" className="mr-2" readOnly checked={descFilter.length === itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).length && descFilter.length > 0} />
+                            <span>{descFilter.length === itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).length && descFilter.length > 0 ? 'Unselect All' : 'Select All'}</span>
+                          </li>
+                          {itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).map((d, idx) => (
                             <li
                               key={d}
-                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${descFilter === d ? 'font-bold text-blue-700' : ''}`}
-                              onClick={() => { setDescFilter(descFilter === d ? '' : d); setDescDropdown(false); setDescSearch(''); }}
+                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${descFilter.includes(d) ? 'font-bold text-blue-700' : ''} ${descActiveIdx === idx + 1 ? 'bg-blue-100' : ''}`}
+                              onMouseEnter={() => setDescActiveIdx(idx + 1)}
+                              onClick={() => setDescFilter(f => f.includes(d) ? f.filter(x => x !== d) : [...f, d])}
                             >
-                              {descFilter === d && <span className="mr-2">✔️</span>}
+                              <input type="checkbox" className="mr-2" readOnly checked={descFilter.includes(d)} />
                               {d}
                             </li>
                           ))}
@@ -227,8 +301,9 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                             <li className="px-2 py-1 text-gray-400">No matches</li>
                           )}
                         </ul>
-                        <div className="mt-2 text-right">
-                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setDescFilter(''); setDescDropdown(false); setDescSearch(''); }}>Clear Filter</button>
+                        <div className="mt-2 flex justify-between">
+                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setDescFilter([]); setDescDropdown(false); setDescSearch(''); }}>Clear</button>
+                          <button className="text-xs text-blue-600 hover:underline" onClick={() => setDescDropdown(false)}>Done</button>
                         </div>
                       </div>
                     )}
