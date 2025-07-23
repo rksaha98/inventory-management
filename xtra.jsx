@@ -1,215 +1,103 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import InventoryTable from './components/InventoryTable';
+import EntryForm from './components/EntryForm';
+import TransactionTable from './components/TransactionTable';
+import SalesSummary from './components/SalesSummary';
 
-const TransactionTable = () => {
-  const [transactions, setTransactions] = useState([]);
-  const [filter, setFilter] = useState('All');
-  const [editRowId, setEditRowId] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    fetch('/.netlify/functions/getTransactionsFromGoogle')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const reversed = data.reverse(); // latest first
-          setTransactions(reversed);
-        } else {
-          console.error("Invalid transaction data format:", data);
-        }
-      })
-      .catch(err => {
-        console.error("Error loading transactions:", err);
-      });
+function Header() {
+  return (
+    <div className="relative w-full min-h-[40vh] flex flex-col items-center justify-center pt-16 pb-8">
+      {/* Futuristic Animated Gradient Border + Glassmorphism Card */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#0fffc1] via-[#7e5fff] to-[#ff5e62] blur-3xl opacity-60 animate-fade-in" aria-hidden="true" />
+      <div className="relative z-10 max-w-3xl mx-auto px-10 py-10 rounded-3xl shadow-2xl border-4 border-transparent bg-white/10 backdrop-blur-2xl flex flex-col items-center"
+        style={{ boxShadow: '0 0 40px 8px #7e5fff55, 0 0 0 4px #0fffc1, 0 0 0 8px #ff5e62' }}>
+        {/* Animated Neon Border */}
+        <div className="absolute -inset-1 rounded-3xl pointer-events-none animate-pulse"
+          style={{
+            background: 'linear-gradient(120deg, #0fffc1 0%, #7e5fff 50%, #ff5e62 100%)',
+            filter: 'blur(8px)',
+            opacity: 0.7,
+            zIndex: 0
+          }}
+        />
+        {/* Futuristic Title */}
+        <h1 className="relative z-10 text-5xl md:text-6xl font-black tracking-tight text-center drop-shadow-lg animate-fade-in uppercase"
+          style={{
+            letterSpacing: '0.08em',
+            background: 'linear-gradient(90deg, #0fffc1 0%, #7e5fff 50%, #ff5e62 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: '#0fffc1'
+          }}
+        >
+          Sarada PaintHouse
+        </h1>
+        <div className="h-4" />
+        {/* Futuristic Subtitle */}
+        <h2 className="relative z-10 text-xl md:text-2xl font-semibold text-center text-white/90 tracking-widest uppercase bg-gradient-to-r from-[#7e5fff] to-[#0fffc1] bg-clip-text text-transparent animate-fade-in">
+          <span className="inline-block px-3 py-1 rounded-full border border-[#0fffc1] bg-white/10 backdrop-blur-sm shadow-md animate-pulse">
+            <span className="mr-2">🎨</span> Hardware & Paint Inventory Manager
+          </span>
+        </h2>
+        {/* Futuristic Accent Bar */}
+        <div className="mt-6 w-32 h-1 rounded-full bg-gradient-to-r from-[#0fffc1] via-[#7e5fff] to-[#ff5e62] animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [inventoryData, setInventoryData] = React.useState([]);
+  const [showTransactions, setShowTransactions] = React.useState(false);
+  const logsRef = React.useRef(null);
+  React.useEffect(() => {
+    async function fetchInventory() {
+      try {
+        const res = await fetch('/.netlify/functions/getInventorySummary');
+        const json = await res.json();
+        setInventoryData(Array.isArray(json) ? json : []);
+      } catch {
+        setInventoryData([]);
+      }
+    }
+    fetchInventory();
   }, []);
 
-  const filteredData = filter === 'All'
-    ? transactions
-    : transactions.filter(txn => txn['Transaction Type'] === filter);
-
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-
-  const handleEditClick = (txn) => {
-    setEditRowId(txn.ID);
-    setEditData({ ...txn });
-  };
-
-  const handleEditChange = (field, value) => {
-    setEditData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleEditCancel = () => {
-    setEditRowId(null);
-    setEditData({});
-  };
-
-  const handleEditSave = async (editedRow) => {
-    try {
-      const res = await fetch('/.netlify/functions/editTransaction', {
-        method: 'POST',
-        body: JSON.stringify(editedRow),
-      });
-      const result = await res.json();
-      if (result.success) {
-        const updated = transactions.map(t =>
-          t.ID === editedRow.ID ? editedRow : t
-        );
-        setTransactions(updated);
-        setEditRowId(null);
-        setEditData({});
-      } else {
-        console.error("Edit failed:", result.error);
-      }
-    } catch (err) {
-      console.error("Error saving edit:", err);
+  React.useEffect(() => {
+    if (showTransactions && logsRef.current) {
+      logsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      const res = await fetch('/.netlify/functions/deleteTransaction', {
-        method: 'POST',
-        body: JSON.stringify({ id }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        const updated = transactions.filter(t => t.ID !== id);
-        setTransactions(updated);
-      } else {
-        console.error("Delete failed:", result.error);
-      }
-    } catch (err) {
-      console.error("Error deleting transaction:", err);
-    }
-  };
+  }, [showTransactions]);
 
   return (
-    <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 mb-10">
-      <h2 className="text-2xl font-bold mb-4 text-blue-700">📄 Transaction Logs</h2>
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-2">
-          <button onClick={() => setFilter('All')} className={`px-3 py-1 border rounded ${filter === 'All' ? 'bg-blue-100' : ''}`}>All</button>
-          <button onClick={() => setFilter('Add')} className={`px-3 py-1 border rounded ${filter === 'Add' ? 'bg-green-100' : ''}`}>Add</button>
-          <button onClick={() => setFilter('Sell')} className={`px-3 py-1 border rounded ${filter === 'Sell' ? 'bg-red-100' : ''}`}>Sell</button>
-        </div>
-        <div className="text-sm">
-          Rows per page:{' '}
-          <input
-            type="number"
-            className="border px-2 py-1 w-16"
-            value={rowsPerPage}
-            onChange={(e) => {
-              setRowsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            min={1}
-          />
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="table-auto w-full text-sm border-collapse">
-          <thead className="bg-gray-100 text-left">
-            <tr>
-              <th className="p-2">ID</th>
-              <th className="p-2">Type</th>
-              <th className="p-2">Category</th>
-              <th className="p-2">Item Description</th>
-              <th className="p-2">Qty</th>
-              <th className="p-2">Price</th>
-              <th className="p-2">Timestamp</th>
-              <th className="p-2">Mode</th>
-              <th className="p-2">Note</th>
-              <th className="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedData.map((txn) => (
-              <tr key={txn.ID} className="odd:bg-gray-50">
-                {editRowId === txn.ID ? (
-                  <>
-                    <td className="p-2">{txn.ID}</td>
-                    <td className="p-2">{txn['Transaction Type']}</td>
-                    <td className="p-2">
-                      <input value={editData['Item Type']} onChange={(e) => handleEditChange('Item Type', e.target.value)} className="input" />
-                    </td>
-                    <td className="p-2">
-                      <input value={editData['Item Description']} onChange={(e) => handleEditChange('Item Description', e.target.value)} className="input" />
-                    </td>
-                    <td className="p-2">
-                      <input type="number" value={editData['Quantity']} onChange={(e) => handleEditChange('Quantity', e.target.value)} className="input" />
-                    </td>
-                    <td className="p-2">
-                      <input type="number" value={editData['Price']} onChange={(e) => handleEditChange('Price', e.target.value)} className="input" />
-                    </td>
-                    <td className="p-2">{txn['Timestamp']}</td>
-                    <td className="p-2">
-                      <input value={editData['Mode']} onChange={(e) => handleEditChange('Mode', e.target.value)} className="input" />
-                    </td>
-                    <td className="p-2">
-                      <input value={editData['Note']} onChange={(e) => handleEditChange('Note', e.target.value)} className="input" />
-                    </td>
-                    <td className="p-2">
-                      <button onClick={() => handleEditSave(editData)} className="text-green-600 hover:underline mr-2">💾</button>
-                      <button onClick={handleEditCancel} className="text-gray-600 hover:underline">✖</button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="p-2">{txn.ID}</td>
-                    <td className="p-2">{txn['Transaction Type']}</td>
-                    <td className="p-2">{txn['Item Type']}</td>
-                    <td className="p-2">{txn['Item Description']}</td>
-                    <td className="p-2">{txn['Quantity']}</td>
-                    <td className="p-2">₹{txn['Price']}</td>
-                    <td className="p-2">{txn['Timestamp']}</td>
-                    <td className="p-2">{txn['Mode']}</td>
-                    <td className="p-2">{txn['Note']}</td>
-                    <td className="p-2">
-                      <button onClick={() => handleEditClick(txn)} className="text-blue-600 hover:underline mr-2">Edit</button>
-                      <button onClick={() => handleDelete(txn.ID)} className="text-red-600 hover:underline">Delete</button>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))}
-            {paginatedData.length === 0 && (
-              <tr>
-                <td className="p-4 text-center text-gray-400" colSpan="10">No transactions found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex justify-between mt-4">
+    <div className="min-h-screen w-full flex flex-col items-center justify-start relative overflow-x-hidden bg-gradient-to-b from-blue-100 to-pink-100 py-10">
+      <Header />
+      <InventoryTable />
+      <EntryForm inventoryData={inventoryData} />
+      {/* Show Transactions Button */}
+      <div className="w-full max-w-xl mx-auto mb-4">
         <button
-          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-3 py-1 border rounded disabled:opacity-50"
+          className={`px-4 py-2 rounded shadow text-sm font-medium border transition-colors w-full ${showTransactions ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-white text-gray-700 border-gray-300'}`}
+          onClick={() => setShowTransactions(v => !v)}
+          type="button"
         >
-          Prev
-        </button>
-        <span className="text-sm text-gray-600">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className="px-3 py-1 border rounded disabled:opacity-50"
-        >
-          Next
+          {showTransactions ? 'Hide Transactions' : 'Show Transactions'}
         </button>
       </div>
-    </section>
+      {/* Transaction Logs Section */}
+      {showTransactions && (
+        <div ref={logsRef} className="w-full flex flex-col items-center">
+          <TransactionTable />
+        </div>
+      )}
+      <SalesSummary />
+    </div>
   );
-};
+}
 
-export default TransactionTable;
+export default App;
+
+// Tailwind custom animation (add to tailwind.config.js if not present):
+// theme: { extend: { keyframes: { 'fade-in': { '0%': { opacity: 0 }, '100%': { opacity: 1 } } }, animation: { 'fade-in': 'fade-in 1.2s ease-in' } } }

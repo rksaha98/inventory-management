@@ -149,18 +149,22 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto mb-8">
-      {/* Toggle Buttons */}
-      <div className="flex flex-row gap-4 mb-4">
+    <div className="w-[60%] max-w-full mx-auto mb-8">
+      {/* Toggle Buttons - dark mode, fluid, larger */}
+      <div className="flex flex-row gap-4 mb-4 w-full">
         <button
-          className={`flex-1 px-4 py-2 rounded-lg border transition-all duration-200 font-semibold text-base focus:outline-none ${mode === 'add' ? 'bg-green-100 text-green-800 border-green-300 shadow' : 'bg-white text-gray-700 border-gray-300 hover:bg-green-50'} `}
+          className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 transition-all duration-200 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
+            ${mode === 'add' ? 'bg-green-700 text-white border-green-500' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-green-800/80'}
+          `}
           onClick={() => handleMode('add')}
           type="button"
         >
           ➕ Add Item
         </button>
         <button
-          className={`flex-1 px-4 py-2 rounded-lg border transition-all duration-200 font-semibold text-base focus:outline-none ${mode === 'sell' ? 'bg-red-100 text-red-800 border-red-300 shadow' : 'bg-white text-gray-700 border-gray-300 hover:bg-red-50'} `}
+          className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 transition-all duration-200 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
+            ${mode === 'sell' ? 'bg-red-700 text-white border-red-500' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-red-800/80'}
+          `}
           onClick={() => handleMode('sell')}
           type="button"
         >
@@ -170,12 +174,12 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
       {/* Form - always visible when mode is set */}
       {mode && (
         <form
-          className="bg-white shadow-lg rounded-xl px-6 py-5 w-full animate-fade-in"
+          className="bg-[#232b3a] shadow-xl rounded-xl px-8 py-7 w-full animate-fade-in border-2 border-[#3a506b]"
           onSubmit={handleSubmit}
         >
           {/* Item Type Smart Dropdown */}
           <div className="mb-3 relative" ref={itemTypeRef}>
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Item Type</label>
+            <label className="text-xs text-gray-300 font-semibold uppercase tracking-wide mb-1 block">Item Type</label>
             <input
               type="text"
               name="itemType"
@@ -184,15 +188,15 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
               onChange={handleTypeInput}
               onFocus={() => setItemTypeDropdown(true)}
               onKeyDown={handleTypeKey}
-              className="w-full border px-3 py-1.5 rounded-md text-sm"
+              className="w-full border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-4 py-2 rounded-md text-base focus:ring-2 focus:ring-blue-500"
               required
             />
             {itemTypeDropdown && filteredTypes.length > 0 && (
-              <ul className="absolute left-0 right-0 bg-white border shadow-lg rounded-md z-10 max-h-40 overflow-y-auto text-sm mt-1">
+              <ul className="absolute left-0 right-0 bg-[#232b3a] border border-[#3a506b] shadow-lg rounded-md z-10 max-h-40 overflow-y-auto text-base mt-1 text-gray-100">
                 {filteredTypes.map((t, i) => (
                   <li
                     key={t}
-                    className={`px-3 py-1.5 cursor-pointer ${i === itemTypeHighlight ? 'bg-blue-100 font-semibold' : ''}`}
+                    className={`px-4 py-2 cursor-pointer ${i === itemTypeHighlight ? 'bg-[#3a506b]/40 font-semibold' : ''}`}
                     onMouseDown={() => handleTypeSelect(t)}
                   >
                     {t}
@@ -203,7 +207,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
           </div>
           {/* Item Description Smart Dropdown */}
           <div className="mb-3 relative" ref={itemDescRef}>
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Item Description</label>
+            <label className="text-xs text-gray-300 font-semibold uppercase tracking-wide mb-1 block">Item Description</label>
             <input
               type="text"
               name="itemDescription"
@@ -212,15 +216,15 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
               onChange={handleDescInput}
               onFocus={() => setItemDescDropdown(true)}
               onKeyDown={handleDescKey}
-              className="w-full border px-3 py-1.5 rounded-md text-sm"
+              className="w-full border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-4 py-2 rounded-md text-base focus:ring-2 focus:ring-blue-500"
               required
             />
             {itemDescDropdown && filteredDescs.length > 0 && (
-              <ul className="absolute left-0 right-0 bg-white border shadow-lg rounded-md z-10 max-h-40 overflow-y-auto text-sm mt-1">
+              <ul className="absolute left-0 right-0 bg-[#232b3a] border border-[#3a506b] shadow-lg rounded-md z-10 max-h-40 overflow-y-auto text-base mt-1 text-gray-100">
                 {filteredDescs.map((d, i) => (
                   <li
                     key={d}
-                    className={`px-3 py-1.5 cursor-pointer ${i === itemDescHighlight ? 'bg-blue-100 font-semibold' : ''}`}
+                    className={`px-4 py-2 cursor-pointer ${i === itemDescHighlight ? 'bg-[#3a506b]/40 font-semibold' : ''}`}
                     onMouseDown={() => handleDescSelect(d)}
                   >
                     {d}
@@ -231,54 +235,56 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
           </div>
           {/* Quantity, Price, Payment, Note */}
           <div className="mb-3">
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Quantity</label>
+            <label className="text-xs text-gray-300 font-semibold uppercase tracking-wide mb-1 block">Quantity</label>
             <input
               type="number"
               name="quantity"
               value={form.quantity}
               onChange={handleChange}
-              className="w-full border px-3 py-1.5 rounded-md text-sm"
+              className="w-full border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-4 py-2 rounded-md text-base focus:ring-2 focus:ring-blue-500"
               min="1"
               required
             />
           </div>
           <div className="mb-3">
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Price PER ITEM</label>
+            <label className="text-xs text-gray-300 font-semibold uppercase tracking-wide mb-1 block">Price PER ITEM</label>
             <input
               type="number"
               name="price"
               value={form.price}
               onChange={handleChange}
-              className="w-full border px-3 py-1.5 rounded-md text-sm"
+              className="w-full border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-4 py-2 rounded-md text-base focus:ring-2 focus:ring-blue-500"
               min="0"
               required
             />
           </div>
           <div className="mb-3">
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Mode of Payment</label>
+            <label className="text-xs text-gray-300 font-semibold uppercase tracking-wide mb-1 block">Mode of Payment</label>
             <input
               type="text"
               name="paymentMode"
               value={form.paymentMode}
               onChange={handleChange}
-              className="w-full border px-3 py-1.5 rounded-md text-sm"
+              className="w-full border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-4 py-2 rounded-md text-base focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="mb-4">
-            <label className="text-xs text-gray-700 font-semibold uppercase tracking-wide mb-1 block">Note</label>
+            <label className="text-xs text-gray-300 font-semibold uppercase tracking-wide mb-1 block">Note</label>
             <input
               type="text"
               name="note"
               value={form.note}
               onChange={handleChange}
-              className="w-full border px-3 py-1.5 rounded-md text-sm"
+              className="w-full border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-4 py-2 rounded-md text-base focus:ring-2 focus:ring-blue-500"
             />
           </div>
           {error && <div className="text-red-600 text-xs mb-2">{error}</div>}
           {success && <div className="text-green-600 text-xs mb-2">{success}</div>}
           <button
             type="submit"
-            className={`w-full ${mode === 'add' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white px-4 py-2 rounded shadow font-semibold transition-all duration-200`}
+            className={`w-full text-lg font-bold rounded-lg shadow-lg px-6 py-3 mt-2 transition-all duration-200
+              ${mode === 'add' ? 'bg-green-700 hover:bg-green-800 text-white' : 'bg-red-700 hover:bg-red-800 text-white'}
+            `}
             disabled={loading}
           >
             {loading ? (mode === 'add' ? 'Adding...' : 'Selling...') : (mode === 'add' ? 'Add Item' : 'Sell Item')}

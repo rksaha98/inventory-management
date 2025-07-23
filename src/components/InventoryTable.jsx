@@ -99,10 +99,10 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
   const colCount = visibleCols.length;
 
   return (
-    <section className="px-2 sm:px-6 md:px-10 lg:px-16 xl:px-24 animate-fade-in">
-      <div className="overflow-x-auto bg-white rounded-lg shadow ring-1 ring-gray-300 w-full">
+    <section className="w-[70%] max-w-full mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12 animate-fade-in">
+      <div className="overflow-x-auto bg-[#232b3a] rounded-xl shadow-lg ring-1 ring-[#3a506b] w-full transition-all duration-300">
         <div className="flex items-center justify-between pt-6 px-6">
-          <span className="text-2xl font-semibold text-blue-600 mb-4 tracking-tight">📦 Inventory Summary</span>
+          <span className="text-2xl font-semibold text-gray-100 mb-4 tracking-tight">📦 Inventory Summary</span>
         </div>
         <div className="flex flex-wrap gap-2 mb-3 px-6">
           <button
@@ -146,22 +146,22 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
             {showSales ? 'Hide' : 'Expand'} Sales Details
           </button>
         </div>
-        <div className="relative px-6 pb-6">
-          <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed" style={{ tableLayout: 'fixed', width: '100%' }}>
+        <div className="relative px-2 sm:px-6 pb-6">
+          <table className="min-w-full divide-y divide-[#3a506b] text-sm table-fixed bg-[#232b3a] text-gray-100" style={{ tableLayout: 'fixed', width: '100%' }}>
             <colgroup>
               {visibleCols.map((_, i) => (
                 <col key={i} style={{ width: `${100 / colCount}%` }} />
               ))}
             </colgroup>
             <thead>
-              <tr className="bg-gray-100">
+              <tr className="bg-[#1b262c]">
                 {visibleCols.map((col, i) => (
-                  <th key={col.key} className="px-3 py-2 border-b text-left relative">
+                  <th key={col.key} className="px-3 py-2 border-b border-[#3a506b] text-left relative font-semibold text-gray-200">
                     <span>{col.label}</span>
                     {/* Filter button for Item Type and Item Description */}
                     {col.filter && (
                       <button
-                        className="ml-2 p-1 rounded hover:bg-blue-100 focus:bg-blue-100 border border-transparent focus:outline-none"
+                        className="ml-2 p-1 rounded hover:bg-[#3a506b]/30 focus:bg-[#3a506b]/40 border border-transparent focus:outline-none"
                         title={`Filter ${col.label}`}
                         onClick={e => {
                           e.stopPropagation();
@@ -176,9 +176,9 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                     )}
                     {/* Dropdown for Item Type (multi-select, keyboard nav) */}
                     {col.key === 'Item Type' && typeDropdown && (
-                      <div ref={typeRef} className="absolute bg-white border border-gray-300 rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full">
+                      <div ref={typeRef} className="absolute bg-[#232b3a] border border-[#3a506b] rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full text-gray-100">
                         <input
-                          className="w-full p-1 border border-gray-300 rounded text-sm mb-1"
+                          className="w-full p-1 border border-[#3a506b] rounded text-sm mb-1 bg-[#1b262c] text-gray-100 placeholder-gray-400"
                           placeholder="Search Item Type..."
                           value={typeSearch}
                           onChange={e => { setTypeSearch(e.target.value); setTypeActiveIdx(0); }}
@@ -209,7 +209,7 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                         />
                         <ul className="max-h-40 overflow-y-auto text-sm" tabIndex={-1}>
                           <li
-                            className={`px-2 py-1 cursor-pointer flex items-center ${typeActiveIdx === 0 ? 'bg-blue-100 font-bold' : ''}`}
+                            className={`px-2 py-1 cursor-pointer flex items-center ${typeActiveIdx === 0 ? 'bg-[#3a506b]/40 font-bold' : ''}`}
                             onMouseEnter={() => setTypeActiveIdx(0)}
                             onClick={() => {
                               const filtered = itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase()));
@@ -223,7 +223,7 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                           {itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).map((t, idx) => (
                             <li
                               key={t}
-                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${typeFilter.includes(t) ? 'font-bold text-blue-700' : ''} ${typeActiveIdx === idx + 1 ? 'bg-blue-100' : ''}`}
+                              className={`px-2 py-1 hover:bg-[#3a506b]/40 cursor-pointer flex items-center ${typeFilter.includes(t) ? 'font-bold text-[#60a5fa]' : ''} ${typeActiveIdx === idx + 1 ? 'bg-[#3a506b]/40' : ''}`}
                               onMouseEnter={() => setTypeActiveIdx(idx + 1)}
                               onClick={() => setTypeFilter(f => f.includes(t) ? f.filter(x => x !== t) : [...f, t])}
                             >
@@ -232,20 +232,20 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                             </li>
                           ))}
                           {typeSearch && itemTypes.filter(t => t && t.toLowerCase().includes(typeSearch.toLowerCase())).length === 0 && (
-                            <li className="px-2 py-1 text-gray-400">No matches</li>
+                            <li className="px-2 py-1 text-gray-500">No matches</li>
                           )}
                         </ul>
                         <div className="mt-2 flex justify-between">
-                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setTypeFilter([]); setTypeDropdown(false); setTypeSearch(''); }}>Clear</button>
-                          <button className="text-xs text-blue-600 hover:underline" onClick={() => setTypeDropdown(false)}>Done</button>
+                          <button className="text-xs text-[#60a5fa] hover:underline" onClick={() => { setTypeFilter([]); setTypeDropdown(false); setTypeSearch(''); }}>Clear</button>
+                          <button className="text-xs text-[#60a5fa] hover:underline" onClick={() => setTypeDropdown(false)}>Done</button>
                         </div>
                       </div>
                     )}
                     {/* Dropdown for Item Description (multi-select, keyboard nav) */}
                     {col.key === 'Item Description' && descDropdown && (
-                      <div ref={descRef} className="absolute bg-white border border-gray-300 rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full">
+                      <div ref={descRef} className="absolute bg-[#232b3a] border border-[#3a506b] rounded shadow-lg z-10 mt-2 p-2 w-64 left-0 top-full text-gray-100">
                         <input
-                          className="w-full p-1 border border-gray-300 rounded text-sm mb-1"
+                          className="w-full p-1 border border-[#3a506b] rounded text-sm mb-1 bg-[#1b262c] text-gray-100 placeholder-gray-400"
                           placeholder="Search Description..."
                           value={descSearch}
                           onChange={e => { setDescSearch(e.target.value); setDescActiveIdx(0); }}
@@ -275,7 +275,7 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                         />
                         <ul className="max-h-40 overflow-y-auto text-sm" tabIndex={-1}>
                           <li
-                            className={`px-2 py-1 cursor-pointer flex items-center ${descActiveIdx === 0 ? 'bg-blue-100 font-bold' : ''}`}
+                            className={`px-2 py-1 cursor-pointer flex items-center ${descActiveIdx === 0 ? 'bg-[#3a506b]/40 font-bold' : ''}`}
                             onMouseEnter={() => setDescActiveIdx(0)}
                             onClick={() => {
                               const filtered = itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase()));
@@ -289,7 +289,7 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                           {itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).map((d, idx) => (
                             <li
                               key={d}
-                              className={`px-2 py-1 hover:bg-blue-100 cursor-pointer flex items-center ${descFilter.includes(d) ? 'font-bold text-blue-700' : ''} ${descActiveIdx === idx + 1 ? 'bg-blue-100' : ''}`}
+                              className={`px-2 py-1 hover:bg-[#3a506b]/40 cursor-pointer flex items-center ${descFilter.includes(d) ? 'font-bold text-[#60a5fa]' : ''} ${descActiveIdx === idx + 1 ? 'bg-[#3a506b]/40' : ''}`}
                               onMouseEnter={() => setDescActiveIdx(idx + 1)}
                               onClick={() => setDescFilter(f => f.includes(d) ? f.filter(x => x !== d) : [...f, d])}
                             >
@@ -298,12 +298,12 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                             </li>
                           ))}
                           {descSearch && itemDescs.filter(d => d && d.toLowerCase().includes(descSearch.toLowerCase())).length === 0 && (
-                            <li className="px-2 py-1 text-gray-400">No matches</li>
+                            <li className="px-2 py-1 text-gray-500">No matches</li>
                           )}
                         </ul>
                         <div className="mt-2 flex justify-between">
-                          <button className="text-xs text-blue-600 hover:underline" onClick={() => { setDescFilter([]); setDescDropdown(false); setDescSearch(''); }}>Clear</button>
-                          <button className="text-xs text-blue-600 hover:underline" onClick={() => setDescDropdown(false)}>Done</button>
+                          <button className="text-xs text-[#60a5fa] hover:underline" onClick={() => { setDescFilter([]); setDescDropdown(false); setDescSearch(''); }}>Clear</button>
+                          <button className="text-xs text-[#60a5fa] hover:underline" onClick={() => setDescDropdown(false)}>Done</button>
                         </div>
                       </div>
                     )}
@@ -314,13 +314,13 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={colCount} className="text-center py-6">
+                  <td colSpan={colCount} className="text-center py-6 text-gray-400 bg-[#232b3a]">
                     Loading...
                   </td>
                 </tr>
               ) : summary.length === 0 ? (
                 <tr>
-                  <td colSpan={colCount} className="text-center py-6">
+                  <td colSpan={colCount} className="text-center py-6 text-gray-400 bg-[#232b3a]">
                     No inventory data.
                   </td>
                 </tr>
@@ -330,8 +330,8 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                   return (
                     <tr
                       key={item["Item Type"] + item["Item Description"]}
-                      className={`odd:bg-gray-50 even:bg-gray-100 hover:bg-blue-50 transition-colors duration-100`}
-                      style={isLow ? { background: withAlpha(lowStockColor, 0.6) } : {}}
+                      className={`odd:bg-[#232b3a] even:bg-[#1b262c] hover:bg-[#3a506b]/40 transition-colors duration-100`}
+                      style={isLow ? { background: withAlpha(lowStockColor, 0.18) } : {}}
                     >
                       {visibleCols.map((col, i) => {
                         let value = item[col.key];
@@ -341,7 +341,7 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                           cellStyle = { background: withAlpha(col.color, 0.13), color: col.color };
                         }
                         return (
-                          <td key={col.key} className="px-3 py-2 border-b truncate max-w-xs text-left">
+                          <td key={col.key} className="px-3 py-2 border-b border-[#3a506b] truncate max-w-xs text-left">
                             <span style={cellStyle} className={col.color ? 'font-medium px-2 py-1 rounded' : ''}>
                               {value}
                             </span>

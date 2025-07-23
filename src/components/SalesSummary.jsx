@@ -97,32 +97,37 @@ export default function SalesSummary() {
   const filteredRows = filteredDates.flatMap(date => grouped[date]);
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="w-[60%] max-w-full mx-auto mb-8 flex flex-col items-center">
       <button
-        className="bg-red-100 hover:bg-red-200 text-red-800 font-medium px-4 py-2 rounded text-sm mb-4"
+        className={`w-full px-4 py-3 rounded-xl shadow text-base font-semibold border-2 transition-colors mb-4
+          ${showSummary
+            ? 'bg-[#1b262c] text-blue-300 border-[#3a506b] hover:bg-[#232b3a]'
+            : 'bg-[#232b3a] text-gray-100 border-[#3a506b] hover:bg-[#1b262c]'}
+        `}
         onClick={() => setShowSummary(v => !v)}
+        type="button"
       >
         {showSummary ? 'Hide Daily Sales Summary' : 'Show Daily Sales Summary'}
       </button>
       {showSummary && (
-        <>
-          <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-            <div className="text-lg font-semibold text-gray-800">🧾 Daily Sales Summary</div>
-            <div className="flex gap-3 items-center flex-wrap">
+        <section className="w-full bg-[#232b3a] shadow-xl rounded-xl border-2 border-[#3a506b] px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-6 animate-fade-in mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <span className="text-2xl font-semibold text-gray-100 tracking-tight">🧾 Daily Sales Summary</span>
+            <div className="flex gap-3 items-center flex-wrap justify-end">
               <input
                 type="date"
-                className="border rounded px-2 py-1 text-sm"
+                className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-3 py-2 rounded text-base focus:ring-2 focus:ring-blue-500"
                 value={fromDate}
                 onChange={e => setFromDate(e.target.value)}
               />
               <input
                 type="date"
-                className="border rounded px-2 py-1 text-sm"
+                className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-3 py-2 rounded text-base focus:ring-2 focus:ring-blue-500"
                 value={toDate}
                 onChange={e => setToDate(e.target.value)}
               />
               <button
-                className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded text-sm shadow"
+                className="border-2 border-[#3a506b] bg-yellow-900 text-yellow-200 hover:bg-yellow-800 px-4 py-2 rounded text-base font-semibold shadow focus:ring-2 focus:ring-yellow-400 transition-colors disabled:opacity-50"
                 onClick={() => exportCSV(filteredRows)}
                 disabled={filteredRows.length === 0}
               >
@@ -132,29 +137,30 @@ export default function SalesSummary() {
           </div>
           <div>
             {loading ? (
-              <div className="text-center py-8 text-gray-500">Loading sales summary...</div>
+              <div className="text-center py-8 text-gray-400">Loading sales summary...</div>
             ) : filteredDates.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">No sales data.</div>
+              <div className="text-center py-8 text-gray-500">No sales data.</div>
             ) : (
               filteredDates.map(date => {
                 const rows = grouped[date];
                 const totalSales = rows.reduce((sum, r) => sum + Number(r.Price) * Number(r.Quantity), 0);
                 return (
-                  <div key={date} className="p-4 bg-red-50 border-l-4 border-red-300 rounded-lg shadow mb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold text-gray-800">Date: {date}</div>
-                      <div className="font-semibold text-gray-800">Total: ₹{totalSales.toLocaleString()}</div>
+                  <div key={date} className="relative p-4 rounded-lg shadow border-l-4 space-y-1 transition-all mb-4
+                    border-yellow-700 bg-[#1b262c]">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="font-semibold text-yellow-200">Date: {date}</div>
+                      <div className="font-semibold text-yellow-200">Total: ₹{totalSales.toLocaleString()}</div>
                       <button
-                        className="bg-gray-200 px-3 py-1 text-sm rounded hover:bg-gray-300"
+                        className="border-2 border-[#3a506b] bg-[#232b3a] text-gray-100 hover:bg-[#1b262c] px-3 py-2 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                         onClick={() => setExpanded(exp => ({ ...exp, [date]: !exp[date] }))}
                       >
                         {expanded[date] ? 'Collapse' : 'Expand'}
                       </button>
                     </div>
                     {expanded[date] && (
-                      <div className="bg-white rounded p-3 mt-3 shadow text-sm text-gray-700">
+                      <div className="bg-[#232b3a] rounded p-3 mt-3 shadow text-sm text-gray-100">
                         <div className="w-full">
-                          <div className="grid grid-cols-5 gap-2 font-semibold text-gray-800 border-b pb-2 mb-2">
+                          <div className="grid grid-cols-5 gap-2 font-semibold text-yellow-200 border-b border-[#3a506b] pb-2 mb-2">
                             <div>Item Type</div>
                             <div>Description</div>
                             <div>Quantity</div>
@@ -162,7 +168,7 @@ export default function SalesSummary() {
                             <div>Total</div>
                           </div>
                           {rows.map((r, idx) => (
-                            <div key={idx} className="grid grid-cols-5 gap-2 border-b last:border-b-0 py-2 items-center">
+                            <div key={idx} className="grid grid-cols-5 gap-2 border-b border-[#3a506b] last:border-b-0 py-2 items-center">
                               <div>{r["Item Type"]}</div>
                               <div>{r["Item Description"]}</div>
                               <div>{r["Quantity"]}</div>
@@ -178,7 +184,7 @@ export default function SalesSummary() {
               })
             )}
           </div>
-        </>
+        </section>
       )}
     </div>
   );

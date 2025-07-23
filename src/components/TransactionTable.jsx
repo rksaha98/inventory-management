@@ -113,12 +113,12 @@ export default function TransactionTable() {
   const totalPages = Math.ceil(filtered.length / rowsPerPage);
 
   return (
-    <section className="w-full max-w-6xl mx-auto bg-white shadow-md rounded-lg p-0 mb-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <h2 className="text-xl font-bold text-blue-600 px-0 pb-0">🧾 Transaction Logs</h2>
+    <section className="w-[60%] max-w-full mx-auto mb-8 bg-[#232b3a] shadow-xl rounded-xl border-2 border-[#3a506b]">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-6">
+        <h2 className="text-xl font-bold text-gray-100 px-0 pb-0">🧾 Transaction Logs</h2>
         <div className="flex flex-wrap gap-4 items-center">
           <select
-            className="border px-2 py-1 rounded text-sm"
+            className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-3 py-2 rounded text-base focus:ring-2 focus:ring-blue-500"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
           >
@@ -128,7 +128,7 @@ export default function TransactionTable() {
           </select>
           <input
             type="date"
-            className="border px-2 py-1 rounded text-sm"
+            className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-3 py-2 rounded text-base focus:ring-2 focus:ring-blue-500"
             value={filterDate}
             onChange={e => setFilterDate(e.target.value)}
             max={new Date().toISOString().slice(0, 10)}
@@ -136,15 +136,15 @@ export default function TransactionTable() {
           <input
             type="number"
             min="1"
-            className="border px-2 py-1 rounded w-20 text-sm text-right"
+            className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 px-3 py-2 rounded w-24 text-base text-right focus:ring-2 focus:ring-blue-500"
             value={rowsPerPage}
             onChange={(e) => setRowsPerPage(Number(e.target.value))}
           />
         </div>
       </div>
-      <div className="space-y-3 px-4 py-2 max-h-[60vh] overflow-y-auto">
+      <div className="space-y-3 px-6 py-4 max-h-[60vh] overflow-y-auto">
         {paginated.length === 0 && (
-          <div className="text-center text-gray-400 py-8">No transactions</div>
+          <div className="text-center text-gray-500 py-8">No transactions</div>
         )}
         {paginated.map((t) => {
           const borderColor = t['Transaction Type'] === 'Add'
@@ -156,18 +156,20 @@ export default function TransactionTable() {
           return (
             <div
               key={t.ID}
-              className={`relative p-4 rounded-lg shadow border-l-4 ${borderColor} space-y-1 transition-all`}
+              className={`relative p-4 rounded-lg shadow border-l-4 space-y-1 transition-all
+                ${t['Transaction Type'] === 'Add' ? 'border-green-700 bg-[#1b262c]' : t['Transaction Type'] === 'Sell' ? 'border-red-700 bg-[#232b3a]' : 'border-[#3a506b] bg-[#232b3a]'}
+              `}
             >
               {/* Actions top-right */}
               <div className="absolute top-4 right-4 flex gap-2">
                 {isEditing ? (
                   <>
                     <button
-                      className="bg-green-100 text-green-800 hover:bg-green-200 px-2 py-1 rounded text-xs"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-green-300 hover:bg-[#232b3a] px-3 py-2 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                       onClick={handleEditSave}
                     >Save</button>
                     <button
-                      className="bg-gray-100 text-gray-800 hover:bg-gray-200 px-2 py-1 rounded text-xs"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-300 hover:bg-[#232b3a] px-3 py-2 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                       onClick={() => setEditId(null)}
                     >Cancel</button>
                   </>
@@ -191,63 +193,63 @@ export default function TransactionTable() {
               {/* Card content */}
               {isEditing ? (
                 <>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-100">
                     <span>{t['Transaction Type'] === 'Sell' ? 'Sold' : 'Added'}</span>
                     <input
                       type="number"
-                      className="border rounded px-2 py-1 w-16 mx-2 text-sm"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded px-2 py-1 w-16 mx-2 text-sm focus:ring-2 focus:ring-blue-500"
                       value={editData['Quantity']}
                       onChange={e => handleEditChange('Quantity', e.target.value)}
                     />
                     pcs of
                     <input
-                      className="border rounded px-2 py-1 w-24 mx-2 text-sm"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded px-2 py-1 w-24 mx-2 text-sm focus:ring-2 focus:ring-blue-500"
                       value={editData['Item Type']}
                       onChange={e => handleEditChange('Item Type', e.target.value)}
                     />
                     -
                     <input
-                      className="border rounded px-2 py-1 w-32 mx-2 text-sm"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded px-2 py-1 w-32 mx-2 text-sm focus:ring-2 focus:ring-blue-500"
                       value={editData['Item Description']}
                       onChange={e => handleEditChange('Item Description', e.target.value)}
                     />
                   </div>
-                  <div className="text-xs text-gray-700 italic mt-1 flex flex-wrap gap-2 items-center">
+                  <div className="text-xs text-gray-300 italic mt-1 flex flex-wrap gap-2 items-center">
                     Price:
                     <input
                       type="number"
-                      className="border rounded px-2 py-1 w-20 text-xs mx-1"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded px-2 py-1 w-20 text-xs mx-1 focus:ring-2 focus:ring-blue-500"
                       value={editData['Price']}
                       onChange={e => handleEditChange('Price', e.target.value)}
                     />
                     |
                     Mode:
                     <input
-                      className="border rounded px-2 py-1 w-20 text-xs mx-1"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded px-2 py-1 w-20 text-xs mx-1 focus:ring-2 focus:ring-blue-500"
                       value={editData['Mode']}
                       onChange={e => handleEditChange('Mode', e.target.value)}
                     />
                     |
                     Note:
                     <input
-                      className="border rounded px-2 py-1 w-32 text-xs mx-1"
+                      className="border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded px-2 py-1 w-32 text-xs mx-1 focus:ring-2 focus:ring-blue-500"
                       value={editData['Note']}
                       onChange={e => handleEditChange('Note', e.target.value)}
                     />
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-400 mt-1">
                     {formatDateDMYTimeSec(editData['Timestamp'] || t.Timestamp)}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-100">
                     {t['Transaction Type'] === 'Sell' ? 'Sold' : 'Added'} {t.Quantity} pcs of {t['Item Type']} - {t['Item Description']}
                   </div>
-                  <div className="text-xs text-gray-700 italic mt-1">
+                  <div className="text-xs text-gray-300 italic mt-1">
                     Price: ₹{Number(t.Price).toFixed(2)} | Mode: {t.Mode} | Note: {t.Note}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-400 mt-1">
                     {formatDateDMYTimeSec(t.Timestamp)}
                   </div>
                 </>
@@ -256,19 +258,19 @@ export default function TransactionTable() {
           );
         })}
       </div>
-      <div className="mt-4 flex flex-wrap justify-between items-center px-4 pb-4">
-        <p className="text-sm text-gray-600 mb-2 md:mb-0">
+      <div className="mt-4 flex flex-wrap justify-between items-center px-6 pb-6">
+        <p className="text-sm text-gray-400 mb-2 md:mb-0">
           Showing {paginated.length} of {filtered.length} transactions
         </p>
         <div className="space-x-2 flex items-center">
           <button
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-4 py-2 border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded disabled:opacity-50 text-base font-semibold"
             onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
           >« Prev</button>
-          <span className="text-sm">Page {currentPage} of {totalPages}</span>
+          <span className="text-base text-gray-200">Page {currentPage} of {totalPages}</span>
           <button
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-4 py-2 border-2 border-[#3a506b] bg-[#1b262c] text-gray-100 rounded disabled:opacity-50 text-base font-semibold"
             onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
           >Next »</button>

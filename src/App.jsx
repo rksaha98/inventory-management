@@ -8,17 +8,43 @@ import SalesSummary from './components/SalesSummary';
 function Header() {
   return (
     <div className="relative w-full min-h-[40vh] flex flex-col items-center justify-center pt-16 pb-8">
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-blue-300 via-indigo-100 to-pink-200 blur-2xl opacity-70 animate-fade-in" aria-hidden="true" />
-      {/* Title Card */}
-      <div className="relative z-10 px-8 py-7 rounded-2xl bg-white/70 backdrop-blur-md shadow-xl border border-blue-100 flex flex-col items-center max-w-2xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-blue-700 via-indigo-600 to-pink-600 text-center drop-shadow animate-fade-in">
+      {/* Title Card with glassmorphism and neon border */}
+      <div className="relative z-10 max-w-3xl mx-auto px-10 py-10 rounded-3xl shadow-xl border-4 border-transparent bg-white/10 backdrop-blur-2xl flex flex-col items-center"
+        style={{ boxShadow: '0 0 24px 4px #232b3a33, 0 0 0 2px #3a506b22' }}>
+        {/* Animated Neon Border */}
+        <div className="absolute -inset-1 rounded-3xl pointer-events-none animate-fade-in"
+          style={{
+            background: 'linear-gradient(120deg, #232b3a 0%, #3a506b 50%, #1b262c 100%)',
+            filter: 'blur(6px)',
+            opacity: 0.6,
+            zIndex: 0
+          }}
+        />
+        {/* Futuristic Title */}
+        <h1
+          className="relative z-10 text-5xl md:text-6xl font-bold tracking-wide text-center animate-fade-in uppercase text-[#232b3a]"
+          style={{
+            fontFamily: 'Segoe UI, Arial, sans-serif',
+            letterSpacing: '0.06em'
+          }}
+        >
           Sarada PaintHouse
         </h1>
-        <div className="h-2" />
-        <h2 className="text-lg md:text-xl font-semibold text-blue-700/80 tracking-wide text-center animate-fade-in">
-          🎨 Hardware & Paint Inventory Manager
+        <div className="h-4" />
+        {/* Futuristic Subtitle */}
+        <h2
+          className="relative z-10 text-xl md:text-2xl font-medium text-center tracking-wide uppercase animate-fade-in text-[#3a506b]"
+          style={{
+            fontFamily: 'Segoe UI, Arial, sans-serif',
+            letterSpacing: '0.08em'
+          }}
+        >
+          <span className="inline-block px-3 py-1 rounded-full border border-[#232b3a] bg-white/10 backdrop-blur-sm shadow-md animate-fade-in">
+            <span className="mr-2"></span>Inventory Manager
+          </span>
         </h2>
+        {/* Futuristic Accent Bar */}
+        <div className="mt-6 w-32 h-1 rounded-full bg-gradient-to-r from-[#232b3a] via-[#3a506b] to-[#1b262c] animate-fade-in" />
       </div>
     </div>
   );
@@ -48,14 +74,21 @@ function App() {
   }, [showTransactions]);
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-start relative overflow-x-hidden bg-gradient-to-b from-blue-100 to-pink-100 py-10">
+    <div className="min-h-screen w-full flex flex-col items-center justify-start relative overflow-x-hidden py-10">
+      {/* Universal animated gradient background for the whole page */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#232b3a] via-[#3a506b] to-[#1b262c] blur-3xl opacity-70 animate-fade-in" aria-hidden="true" />
       <Header />
+      {/* Inventory Table rendered directly, all styling handled in component */}
       <InventoryTable />
       <EntryForm inventoryData={inventoryData} />
       {/* Show Transactions Button */}
-      <div className="w-full max-w-xl mx-auto mb-4">
+      <div className="w-[60%] max-w-full mx-auto mb-8 flex justify-center">
         <button
-          className={`px-4 py-2 rounded shadow text-sm font-medium border transition-colors w-full ${showTransactions ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-white text-gray-700 border-gray-300'}`}
+          className={`w-full px-4 py-3 rounded-xl shadow text-base font-semibold border-2 transition-colors
+            ${showTransactions
+              ? 'bg-[#1b262c] text-blue-300 border-[#3a506b] hover:bg-[#232b3a]'
+              : 'bg-[#232b3a] text-gray-100 border-[#3a506b] hover:bg-[#1b262c]'}
+          `}
           onClick={() => setShowTransactions(v => !v)}
           type="button"
         >
