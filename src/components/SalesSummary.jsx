@@ -110,7 +110,7 @@ export default function SalesSummary() {
         {showSummary ? 'Hide Daily Sales Summary' : 'Show Daily Sales Summary'}
       </button>
       {showSummary && (
-        <section className="w-full bg-[#232b3a] shadow-xl rounded-xl border-2 border-[#3a506b] px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-6 animate-fade-in mb-2">
+        <section className="w-full bg-[#232b3a] shadow-xl rounded-xl border-2 border-[#3a506b] px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-6 mb-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <span className="text-2xl font-semibold text-gray-100 tracking-tight">🧾 Daily Sales Summary</span>
             <div className="flex gap-3 items-center flex-wrap justify-end">

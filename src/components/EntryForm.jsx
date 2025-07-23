@@ -153,18 +153,18 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
       {/* Toggle Buttons - dark mode, fluid, larger */}
       <div className="flex flex-row gap-4 mb-4 w-full">
         <button
-          className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 transition-all duration-200 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
-            ${mode === 'add' ? 'bg-green-700 text-white border-green-500' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-green-800/80'}
-          `}
+          className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
+            ${mode === 'add' ? 'bg-green-700 text-white border-green-500' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-green-800/80'}`
+          }
           onClick={() => handleMode('add')}
           type="button"
         >
           ➕ Add Item
         </button>
         <button
-          className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 transition-all duration-200 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
-            ${mode === 'sell' ? 'bg-red-700 text-white border-red-500' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-red-800/80'}
-          `}
+          className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
+            ${mode === 'sell' ? 'bg-[#CA3433] text-white border-[#a12a29]' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-[#CA3433]/80'}`
+          }
           onClick={() => handleMode('sell')}
           type="button"
         >
@@ -174,7 +174,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
       {/* Form - always visible when mode is set */}
       {mode && (
         <form
-          className="bg-[#232b3a] shadow-xl rounded-xl px-8 py-7 w-full animate-fade-in border-2 border-[#3a506b]"
+          className="bg-[#232b3a] shadow-xl rounded-xl px-8 py-7 w-full border-2 border-[#3a506b]"
           onSubmit={handleSubmit}
         >
           {/* Item Type Smart Dropdown */}
@@ -282,9 +282,9 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
           {success && <div className="text-green-600 text-xs mb-2">{success}</div>}
           <button
             type="submit"
-            className={`w-full text-lg font-bold rounded-lg shadow-lg px-6 py-3 mt-2 transition-all duration-200
-              ${mode === 'add' ? 'bg-green-700 hover:bg-green-800 text-white' : 'bg-red-700 hover:bg-red-800 text-white'}
-            `}
+            className={`w-full text-lg font-bold rounded-lg shadow-lg px-6 py-3 mt-2
+              ${mode === 'add' ? 'bg-green-700 hover:bg-green-800 text-white' : 'bg-[#CA3433] hover:bg-[#a12a29] text-white'}`
+            }
             disabled={loading}
           >
             {loading ? (mode === 'add' ? 'Adding...' : 'Selling...') : (mode === 'add' ? 'Add Item' : 'Sell Item')}
