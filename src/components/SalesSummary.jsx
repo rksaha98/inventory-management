@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
 
-function formatDate(dateStr) {
-  // Assumes DD-MM-YYYY
-  const [d, m, y] = dateStr.split("-");
-  return `${y}-${m}-${d}`;
-}
+import React, { useEffect, useState } from "react";
 
 function exportCSV(data, filename = "sales-summary.csv") {
   if (!data.length) return;
-  const headers = Object.keys(data[0]);
-  const rows = data.map(row => headers.map(h => row[h]));
+  // Remove 'Transaction Type' from each row
+  const filtered = data.map(row => {
+    const { ["Transaction Type"]: _, ...rest } = row;
+    return rest;
+  });
+  const headers = Object.keys(filtered[0]);
+  const rows = filtered.map(row => headers.map(h => row[h]));
   let csv = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -26,6 +26,7 @@ export default function SalesSummary() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
+  const [showSummary, setShowSummary] = useState(false);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -38,13 +39,15 @@ export default function SalesSummary() {
         let rows = result.rows || result;
         // If array-of-arrays, convert to array-of-objects
         if (Array.isArray(rows) && rows.length && Array.isArray(rows[0])) {
-          const headers = ["Date", "Item Type", "Item Description", "Quantity", "Price", "Total"];
+          const headers = ["Date", "Item Type", "Item Description", "Quantity", "Price", "Total", "Transaction Type"];
           rows = rows.map(arr => {
             const obj = {};
             headers.forEach((h, i) => { obj[h] = arr[i]; });
             return obj;
           });
         }
+        // Only keep 'Sell' transactions
+        rows = rows.filter(r => r["Transaction Type"] === "Sell" || r["Transaction Type"] === undefined);
         setData(Array.isArray(rows) ? rows : []);
       } catch (err) {
         setData([]);
@@ -66,10 +69,12 @@ export default function SalesSummary() {
   let filteredDates = Object.keys(grouped);
   if (fromDate || toDate) {
     filteredDates = filteredDates.filter(date => {
-      const d = formatDate(date);
-      const from = fromDate ? fromDate : d;
-      const to = toDate ? toDate : d;
-      return d >= from && d <= to;
+      // Format: DD-MM-YYYY
+      const [d, m, y] = date.split("-");
+      const dISO = `${y}-${m}-${d}`;
+      const from = fromDate ? fromDate : dISO;
+      const to = toDate ? toDate : dISO;
+      return dISO >= from && dISO <= to;
     });
   } else {
     // Show only current date sales if no filter
@@ -82,101 +87,99 @@ export default function SalesSummary() {
   }
 
   // Sort dates latest first
-  filteredDates.sort((a, b) => formatDate(b).localeCompare(formatDate(a)));
+  filteredDates.sort((a, b) => {
+    const [da, ma, ya] = a.split("-");
+    const [db, mb, yb] = b.split("-");
+    return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
+  });
 
   // Prepare filtered data for CSV export
   const filteredRows = filteredDates.flatMap(date => grouped[date]);
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <div className="flex flex-wrap gap-4 mb-4 items-center">
-        <div className="flex gap-2 items-center">
-          <label className="font-medium">From:</label>
-          <input type="date" className="border rounded px-2 py-1" value={fromDate} onChange={e => setFromDate(e.target.value)} />
-        </div>
-        <div className="flex gap-2 items-center">
-          <label className="font-medium">To:</label>
-          <input type="date" className="border rounded px-2 py-1" value={toDate} onChange={e => setToDate(e.target.value)} />
-        </div>
-        <button
-          className="ml-auto px-4 py-2 bg-blue-600 text-white rounded shadow"
-          onClick={() => exportCSV(filteredRows)}
-          disabled={filteredRows.length === 0}
-        >
-          Export CSV
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border rounded shadow bg-white">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-3 py-2 border">Date</th>
-              <th className="px-3 py-2 border">Total Sales</th>
-              <th className="px-3 py-2 border">Expand</th>
-            </tr>
-          </thead>
-          <tbody>
+      <button
+        className="bg-red-100 hover:bg-red-200 text-red-800 font-medium px-4 py-2 rounded text-sm mb-4"
+        onClick={() => setShowSummary(v => !v)}
+      >
+        {showSummary ? 'Hide Daily Sales Summary' : 'Show Daily Sales Summary'}
+      </button>
+      {showSummary && (
+        <>
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+            <div className="text-lg font-semibold text-gray-800">🧾 Daily Sales Summary</div>
+            <div className="flex gap-3 items-center flex-wrap">
+              <input
+                type="date"
+                className="border rounded px-2 py-1 text-sm"
+                value={fromDate}
+                onChange={e => setFromDate(e.target.value)}
+              />
+              <input
+                type="date"
+                className="border rounded px-2 py-1 text-sm"
+                value={toDate}
+                onChange={e => setToDate(e.target.value)}
+              />
+              <button
+                className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded text-sm shadow"
+                onClick={() => exportCSV(filteredRows)}
+                disabled={filteredRows.length === 0}
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
+          <div>
             {loading ? (
-              <tr>
-                <td colSpan={3} className="text-center py-6">Loading sales summary...</td>
-              </tr>
+              <div className="text-center py-8 text-gray-500">Loading sales summary...</div>
             ) : filteredDates.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="text-center py-6">No sales data.</td>
-              </tr>
+              <div className="text-center py-8 text-gray-400">No sales data.</div>
             ) : (
               filteredDates.map(date => {
                 const rows = grouped[date];
-                const totalSales = rows.reduce((sum, r) => sum + Number(r.Total), 0);
+                const totalSales = rows.reduce((sum, r) => sum + Number(r.Price) * Number(r.Quantity), 0);
                 return (
-                  <React.Fragment key={date}>
-                    <tr className="bg-gray-50">
-                      <td className="px-3 py-2 border font-semibold">{date}</td>
-                      <td className="px-3 py-2 border font-semibold">₹{totalSales.toFixed(2)}</td>
-                      <td className="px-3 py-2 border text-center">
-                        <button
-                          className="px-2 py-1 bg-blue-100 rounded hover:bg-blue-200"
-                          onClick={() => setExpanded(exp => ({ ...exp, [date]: !exp[date] }))}
-                        >
-                          {expanded[date] ? "Collapse" : "Expand"}
-                        </button>
-                      </td>
-                    </tr>
+                  <div key={date} className="p-4 bg-red-50 border-l-4 border-red-300 rounded-lg shadow mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-gray-800">Date: {date}</div>
+                      <div className="font-semibold text-gray-800">Total: ₹{totalSales.toLocaleString()}</div>
+                      <button
+                        className="bg-gray-200 px-3 py-1 text-sm rounded hover:bg-gray-300"
+                        onClick={() => setExpanded(exp => ({ ...exp, [date]: !exp[date] }))}
+                      >
+                        {expanded[date] ? 'Collapse' : 'Expand'}
+                      </button>
+                    </div>
                     {expanded[date] && (
-                      <tr>
-                        <td colSpan={3} className="p-0">
-                          <table className="w-full">
-                            <thead>
-                              <tr className="bg-gray-200">
-                                <th className="px-2 py-1 border">Item Type</th>
-                                <th className="px-2 py-1 border">Item Description</th>
-                                <th className="px-2 py-1 border">Quantity</th>
-                                <th className="px-2 py-1 border">Price</th>
-                                <th className="px-2 py-1 border">Total</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {rows.map((r, idx) => (
-                                <tr key={idx}>
-                                  <td className="px-2 py-1 border">{r["Item Type"]}</td>
-                                  <td className="px-2 py-1 border">{r["Item Description"]}</td>
-                                  <td className="px-2 py-1 border">{r["Quantity"]}</td>
-                                  <td className="px-2 py-1 border">₹{Number(r["Price"]).toFixed(2)}</td>
-                                  <td className="px-2 py-1 border">₹{Number(r["Total"]).toFixed(2)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
+                      <div className="bg-white rounded p-3 mt-3 shadow text-sm text-gray-700">
+                        <div className="w-full">
+                          <div className="grid grid-cols-5 gap-2 font-semibold text-gray-800 border-b pb-2 mb-2">
+                            <div>Item Type</div>
+                            <div>Description</div>
+                            <div>Quantity</div>
+                            <div>Price</div>
+                            <div>Total</div>
+                          </div>
+                          {rows.map((r, idx) => (
+                            <div key={idx} className="grid grid-cols-5 gap-2 border-b last:border-b-0 py-2 items-center">
+                              <div>{r["Item Type"]}</div>
+                              <div>{r["Item Description"]}</div>
+                              <div>{r["Quantity"]}</div>
+                              <div>₹{Number(r["Price"]).toFixed(2)}</div>
+                              <div>₹{(Number(r["Price"]) * Number(r["Quantity"]) || 0).toLocaleString()}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                  </React.Fragment>
+                  </div>
                 );
               })
             )}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
