@@ -7,8 +7,8 @@ function formatCurrency(num) {
 export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97316", lowStockColor = "#f43f5e", lowStockQty = 10 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showPurchase, setShowPurchase] = useState(true);
-  const [showSales, setShowSales] = useState(true);
+  const [showPurchase, setShowPurchase] = useState(false);
+  const [showSales, setShowSales] = useState(false);
   const [typeFilter, setTypeFilter] = useState([]); // Multi-select
   const [descFilter, setDescFilter] = useState([]); // Multi-select
   const [typeDropdown, setTypeDropdown] = useState(false);

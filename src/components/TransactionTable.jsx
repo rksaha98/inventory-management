@@ -14,12 +14,15 @@ export default function TransactionTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchTransactions();
+    // eslint-disable-next-line
   }, []);
 
   const fetchTransactions = async () => {
+    setLoading(true);
     try {
       const res = await fetch(API_URL);
       const json = await res.json();
@@ -36,6 +39,7 @@ export default function TransactionTable() {
     } catch (err) {
       console.error('❌ Error fetching transactions:', err);
     }
+    setLoading(false);
   };
 
   const handleDelete = async (id) => {
@@ -143,10 +147,11 @@ export default function TransactionTable() {
         </div>
       </div>
       <div className="space-y-3 px-6 py-4 max-h-[60vh] overflow-y-auto">
-        {paginated.length === 0 && (
+        {loading ? (
+          <div className="text-center text-gray-500 py-8">Loading transactions...</div>
+        ) : paginated.length === 0 ? (
           <div className="text-center text-gray-500 py-8">No transactions</div>
-        )}
-        {paginated.map((t) => {
+        ) : paginated.map((t) => {
           const borderColor = t['Transaction Type'] === 'Add'
             ? 'border-green-300 bg-green-50'
             : t['Transaction Type'] === 'Sell'
