@@ -130,10 +130,17 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
     setSuccess('');
     try {
       const endpoint = mode === 'add' ? '/.netlify/functions/addItemToGoogle' : '/.netlify/functions/sellItemToGoogle';
+      // Add timestamp in dd-mm-yyyy format
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const dateStr = `${dd}-${mm}-${yyyy}`;
+      const payload = { ...form, Timestamp: dateStr };
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Failed to submit');
       setSuccess(mode === 'add' ? 'Item added!' : 'Item sold!');
