@@ -4,7 +4,7 @@ function formatCurrency(num) {
   return "₹" + Number(num).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
 
-export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97316", lowStockColor = "#f43f5e", lowStockQty = 10 }) {
+export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec10e", lowStockColor = "#f43f5e", lowStockQty = 5 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPurchase, setShowPurchase] = useState(false);
@@ -99,8 +99,8 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
   const colCount = visibleCols.length;
 
   return (
-    <section className="w-[70%] max-w-full mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12 animate-fade-in">
-      <div className="overflow-x-auto bg-[#232b3a] rounded-xl shadow-lg ring-1 ring-[#3a506b] w-full transition-all duration-300">
+    <section className="w-[70%] max-w-full mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12">
+      <div className="overflow-x-auto bg-[#232b3a] rounded-xl shadow-lg ring-1 ring-[#3a506b] w-full">
         <div className="flex items-center justify-between pt-6 px-6">
           <span className="text-2xl font-semibold text-gray-100 mb-4 tracking-tight">📦 Inventory Summary</span>
         </div>
@@ -330,7 +330,7 @@ export default function InventoryTable({ buyColor = "#16a34a", sellColor = "#f97
                   return (
                     <tr
                       key={item["Item Type"] + item["Item Description"]}
-                      className={`odd:bg-[#232b3a] even:bg-[#1b262c] hover:bg-[#3a506b]/40 transition-colors duration-100`}
+                      className={`odd:bg-[#232b3a] even:bg-[#1b262c] hover:bg-[#3a506b]/40`}
                       style={isLow ? { background: withAlpha(lowStockColor, 0.18) } : {}}
                     >
                       {visibleCols.map((col, i) => {

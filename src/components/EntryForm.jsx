@@ -136,7 +136,8 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const yyyy = now.getFullYear();
       const dateStr = `${dd}-${mm}-${yyyy}`;
-      const payload = { ...form, Timestamp: dateStr };
+      // Add 'mode' property to match TransactionTable's edit logic
+      const payload = { ...form, Timestamp: dateStr, mode: form.paymentMode };
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -161,7 +162,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
       <div className="flex flex-row gap-4 mb-4 w-full">
         <button
           className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
-            ${mode === 'add' ? 'bg-green-700 text-white border-green-500' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-green-800/80'}`
+            ${mode === 'add' ? 'bg-[#8dc540] text-white border-[#8dc540]' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-[#8dc540]/80'}`
           }
           onClick={() => handleMode('add')}
           type="button"
@@ -170,7 +171,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
         </button>
         <button
           className={`flex-1 min-w-0 px-6 py-3 rounded-lg border-2 font-semibold text-lg focus:outline-none tracking-wide shadow-lg
-            ${mode === 'sell' ? 'bg-[#CA3433] text-white border-[#a12a29]' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-[#CA3433]/80'}`
+            ${mode === 'sell' ? 'bg-[#fec10e] text-white border-[#fec10e]' : 'bg-[#232b3a] text-gray-200 border-[#3a506b] hover:bg-[#fec10e]/80'}`
           }
           onClick={() => handleMode('sell')}
           type="button"
@@ -290,7 +291,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
           <button
             type="submit"
             className={`w-full text-lg font-bold rounded-lg shadow-lg px-6 py-3 mt-2
-              ${mode === 'add' ? 'bg-green-700 hover:bg-green-800 text-white' : 'bg-[#CA3433] hover:bg-[#a12a29] text-white'}`
+              ${mode === 'add' ? 'bg-[#8dc540] hover:bg-[#7bb23a] text-white' : 'bg-[#fec10e] hover:bg-[#e0ad0c] text-white'}`
             }
             disabled={loading}
           >
