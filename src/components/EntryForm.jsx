@@ -130,12 +130,19 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
     setSuccess('');
     try {
       const endpoint = mode === 'add' ? '/.netlify/functions/addItemToGoogle' : '/.netlify/functions/sellItemToGoogle';
-      // Add timestamp in dd-mm-yyyy format
+      // Timestamp in 'd/m/yyyy, h:mm:ss am/pm' format
       const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const dateStr = `${dd}-${mm}-${yyyy}`;
+      const d = now.getDate();
+      const m = now.getMonth() + 1;
+      const y = now.getFullYear();
+      let h = now.getHours();
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const sec = String(now.getSeconds()).padStart(2, '0');
+      const ampm = h >= 12 ? 'pm' : 'am';
+      h = h % 12;
+      h = h === 0 ? 12 : h;
+      const timeStr = `${h}:${min}:${sec} ${ampm}`;
+      const dateStr = `${d}/${m}/${y}, ${timeStr}`;
       // Add 'mode' property to match TransactionTable's edit logic
       const payload = { ...form, Timestamp: dateStr, mode: form.paymentMode };
       const res = await fetch(endpoint, {
