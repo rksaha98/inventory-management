@@ -29,6 +29,28 @@ export default function SalesSummary() {
   const [showSummary, setShowSummary] = useState(false);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  // Map for avg purchase price: { 'ItemType|ItemDesc': avgPrice }
+  const [avgPurchaseMap, setAvgPurchaseMap] = useState({});
+
+  // Fetch inventory summary for avg purchase price
+  useEffect(() => {
+    async function fetchInventory() {
+      try {
+        const res = await fetch("/.netlify/functions/getInventorySummary");
+        const inv = await res.json();
+        // Build map: key = Item Type|Item Description, value = Avg Purchase Price
+        const map = {};
+        (Array.isArray(inv) ? inv : []).forEach(row => {
+          const key = `${row["Item Type"]}|${row["Item Description"]}`;
+          map[key] = Number(row["Avg Purchase Price"]);
+        });
+        setAvgPurchaseMap(map);
+      } catch {
+        setAvgPurchaseMap({});
+      }
+    }
+    fetchInventory();
+  }, []);
 
   useEffect(() => {
     async function fetchSummary() {
@@ -144,12 +166,40 @@ export default function SalesSummary() {
               filteredDates.map(date => {
                 const rows = grouped[date];
                 const totalSales = rows.reduce((sum, r) => sum + Number(r.Price) * Number(r.Quantity), 0);
+                // Calculate daily margin (weighted by total cost)
+                let totalCost = 0, totalProfit = 0;
+                rows.forEach(r => {
+                  const key = `${r["Item Type"]}|${r["Item Description"]}`;
+                  const avgPurchase = avgPurchaseMap[key] || 0;
+                  const salePrice = Number(r["Price"]);
+                  const qty = Number(r["Quantity"]);
+                  if (avgPurchase > 0 && qty > 0) {
+                    totalCost += avgPurchase * qty;
+                    totalProfit += (salePrice - avgPurchase) * qty;
+                  }
+                });
+                let dailyMarginNum = null;
+                let dailyMargin = '-';
+                if (totalCost > 0) {
+                  dailyMarginNum = (totalProfit / totalCost) * 100;
+                  dailyMarginNum = Math.round(dailyMarginNum * 10) / 10;
+                  dailyMargin = (dailyMarginNum > 0 ? '+' : '') + dailyMarginNum.toFixed(1) + '%';
+                }
                 return (
                   <div key={date} className="relative p-4 rounded-lg shadow border-l-4 space-y-1 transition-all mb-4
                     border-yellow-700 bg-[#1b262c]">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="font-semibold text-yellow-200">Date: {date}</div>
                       <div className="font-semibold text-yellow-200">Total: ₹{totalSales.toLocaleString()}</div>
+                      <div className="font-semibold text-yellow-200 flex items-center">
+                        Margin: {dailyMarginNum === null ? (
+                          <span className="text-gray-400 ml-1">-</span>
+                        ) : dailyMarginNum < 0 ? (
+                          <span className="text-red-500 font-bold flex items-center ml-1">{dailyMargin} <span className="ml-1">▼</span></span>
+                        ) : (
+                          <span className="text-green-500 font-bold flex items-center ml-1">{dailyMargin} <span className="ml-1">▲</span></span>
+                        )}
+                      </div>
                       <button
                         className="border-2 border-[#3a506b] bg-[#232b3a] text-gray-100 hover:bg-[#1b262c] px-3 py-2 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                         onClick={() => setExpanded(exp => ({ ...exp, [date]: !exp[date] }))}
@@ -160,22 +210,46 @@ export default function SalesSummary() {
                     {expanded[date] && (
                       <div className="bg-[#232b3a] rounded p-3 mt-3 shadow text-sm text-gray-100">
                         <div className="w-full">
-                          <div className="grid grid-cols-5 gap-2 font-semibold text-yellow-200 border-b border-[#3a506b] pb-2 mb-2">
+                          <div className="grid grid-cols-6 gap-2 font-semibold text-yellow-200 border-b border-[#3a506b] pb-2 mb-2">
                             <div>Item Type</div>
                             <div>Description</div>
                             <div>Quantity</div>
                             <div>Price</div>
                             <div>Total</div>
+                            <div>Margin</div>
                           </div>
-                          {rows.map((r, idx) => (
-                            <div key={idx} className="grid grid-cols-5 gap-2 border-b border-[#3a506b] last:border-b-0 py-2 items-center">
-                              <div>{r["Item Type"]}</div>
-                              <div>{r["Item Description"]}</div>
-                              <div>{r["Quantity"]}</div>
-                              <div>₹{Number(r["Price"]).toFixed(2)}</div>
-                              <div>₹{(Number(r["Price"]) * Number(r["Quantity"]) || 0).toLocaleString()}</div>
-                            </div>
-                          ))}
+                          {rows.map((r, idx) => {
+                            const key = `${r["Item Type"]}|${r["Item Description"]}`;
+                            const avgPurchase = avgPurchaseMap[key] || 0;
+                            const salePrice = Number(r["Price"]);
+                            let margin = '';
+                            let marginNum = null;
+                            if (avgPurchase > 0) {
+                              marginNum = ((salePrice - avgPurchase) / avgPurchase) * 100;
+                              marginNum = Math.round(marginNum * 10) / 10;
+                              margin = (marginNum > 0 ? '+' : '') + marginNum.toFixed(1) + '%';
+                            } else {
+                              margin = '-';
+                            }
+                            return (
+                              <div key={idx} className="grid grid-cols-6 gap-2 border-b border-[#3a506b] last:border-b-0 py-2 items-center">
+                                <div>{r["Item Type"]}</div>
+                                <div>{r["Item Description"]}</div>
+                                <div>{r["Quantity"]}</div>
+                                <div>₹{Number(r["Price"]).toFixed(2)}</div>
+                                <div>₹{(Number(r["Price"]) * Number(r["Quantity"]) || 0).toLocaleString()}</div>
+                                <div>
+                                  {marginNum === null ? (
+                                    <span className="text-gray-400">-</span>
+                                  ) : marginNum < 0 ? (
+                                    <span className="text-red-500 font-bold flex items-center">{margin} <span className="ml-1">▼</span></span>
+                                  ) : (
+                                    <span className="text-green-500 font-bold flex items-center">{margin} <span className="ml-1">▲</span></span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
