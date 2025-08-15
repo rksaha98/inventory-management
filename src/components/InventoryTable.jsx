@@ -9,6 +9,8 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
   const [loading, setLoading] = useState(true);
   const [showPurchase, setShowPurchase] = useState(false);
   const [showSales, setShowSales] = useState(false);
+  const [showMarkup, setShowMarkup] = useState(false);
+  const [showMargin, setShowMargin] = useState(false);
   const [typeFilter, setTypeFilter] = useState([]); // Multi-select
   const [descFilter, setDescFilter] = useState([]); // Multi-select
   const [typeDropdown, setTypeDropdown] = useState(false);
@@ -27,6 +29,8 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
     try {
       const res = await fetch("/.netlify/functions/getInventorySummary");
       const json = await res.json();
+      // Extract Markup (J) and Margin (K) columns
+      // Assume backend returns these as keys 'Markup' and 'Margin' in each row
       setData(Array.isArray(json) ? json : []);
     } catch (err) {
       setData([]);
@@ -101,13 +105,18 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
     { key: 'Avg Sale Price', label: 'Avg Sale Price', color: sellColor, isCurrency: true },
     { key: 'Total Sales Value', label: 'Total Sales Value', color: sellColor, isCurrency: true },
   ];
+  const markupCol = { key: 'Markup', label: 'Markup', color: undefined, isCurrency: false };
+  const marginCol = { key: 'Margin', label: 'Margin', color: undefined, isCurrency: false };
+
   let visibleCols = [...baseCols];
   if (showPurchase) visibleCols = visibleCols.concat(purchaseCols);
   if (showSales) visibleCols = visibleCols.concat(salesCols);
+  if (showMarkup) visibleCols = visibleCols.concat([markupCol]);
+  if (showMargin) visibleCols = visibleCols.concat([marginCol]);
   const colCount = visibleCols.length;
 
   return (
-    <section className="w-[70%] max-w-full mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12">
+    <section className="w-[95%] max-w-full mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12">
       <div className="overflow-x-auto bg-[#232b3a] rounded-xl shadow-lg ring-1 ring-[#3a506b] w-full">
         <div className="flex items-center justify-between pt-6 px-6">
           <span className="text-2xl font-semibold text-gray-100 mb-4 tracking-tight">📦 Inventory Summary</span>
@@ -117,17 +126,8 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
             className="text-xs px-3 py-1 rounded border font-semibold transition-colors duration-150 shadow-sm"
             style={
               showPurchase
-                ? {
-                    background: buyColor,
-                    color: '#fff',
-                    borderColor: 'transparent',
-                    boxShadow: `0 2px 8px 0 ${buyColor}4D`,
-                  }
-                : {
-                    background: lighten(buyColor, 0.7),
-                    color: buyColor,
-                    borderColor: lighten(buyColor, 0.5),
-                  }
+                ? { background: buyColor, color: '#fff', borderColor: 'transparent', boxShadow: `0 2px 8px 0 ${buyColor}4D` }
+                : { background: lighten(buyColor, 0.7), color: buyColor, borderColor: lighten(buyColor, 0.5) }
             }
             onClick={() => setShowPurchase((v) => !v)}
           >
@@ -137,21 +137,26 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
             className="text-xs px-3 py-1 rounded border font-semibold transition-colors duration-150 shadow-sm"
             style={
               showSales
-                ? {
-                    background: sellColor,
-                    color: '#fff',
-                    borderColor: 'transparent',
-                    boxShadow: `0 2px 8px 0 ${sellColor}4D`,
-                  }
-                : {
-                    background: lighten(sellColor, 0.7),
-                    color: sellColor,
-                    borderColor: lighten(sellColor, 0.5),
-                  }
+                ? { background: sellColor, color: '#fff', borderColor: 'transparent', boxShadow: `0 2px 8px 0 ${sellColor}4D` }
+                : { background: lighten(sellColor, 0.7), color: sellColor, borderColor: lighten(sellColor, 0.5) }
             }
             onClick={() => setShowSales((v) => !v)}
           >
             {showSales ? 'Hide' : 'Expand'} Sales Details
+          </button>
+          <button
+            className="text-xs px-3 py-1 rounded border font-semibold transition-colors duration-150 shadow-sm"
+            style={{ background: showMarkup ? '#3b82f6' : lighten('#3b82f6', 0.7), color: showMarkup ? '#fff' : '#3b82f6', borderColor: lighten('#3b82f6', 0.5) }}
+            onClick={() => setShowMarkup((v) => !v)}
+          >
+            {showMarkup ? 'Hide' : 'Expand'} Markup
+          </button>
+          <button
+            className="text-xs px-3 py-1 rounded border font-semibold transition-colors duration-150 shadow-sm"
+            style={{ background: showMargin ? '#6366f1' : lighten('#6366f1', 0.7), color: showMargin ? '#fff' : '#6366f1', borderColor: lighten('#6366f1', 0.5) }}
+            onClick={() => setShowMargin((v) => !v)}
+          >
+            {showMargin ? 'Hide' : 'Expand'} Margin
           </button>
         </div>
         <div className="relative px-2 sm:px-6 pb-6">
