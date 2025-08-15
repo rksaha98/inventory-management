@@ -1,15 +1,9 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 function exportCSV(data, filename = "sales-summary.csv") {
   if (!data.length) return;
-  // Remove 'Transaction Type' from each row
-  const filtered = data.map(row => {
-    const { ["Transaction Type"]: _, ...rest } = row;
-    return rest;
-  });
-  const headers = Object.keys(filtered[0]);
-  const rows = filtered.map(row => headers.map(h => row[h]));
+  const headers = Object.keys(data[0]);
+  const rows = data.map(row => headers.map(h => row[h]));
   let csv = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -24,109 +18,67 @@ function exportCSV(data, filename = "sales-summary.csv") {
 
 export default function SalesSummary() {
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState({});
+  const [loading, setLoading] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [expanded, setExpanded] = useState({});
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  // Map for avg purchase price: { 'ItemType|ItemDesc': avgPrice }
-  const [avgPurchaseMap, setAvgPurchaseMap] = useState({});
 
-  // Fetch inventory summary for avg purchase price
-  useEffect(() => {
-    async function fetchInventory() {
-      try {
-        const res = await fetch("/.netlify/functions/getInventorySummary");
-        const inv = await res.json();
-        // Build map: key = Item Type|Item Description, value = Avg Purchase Price
-        const map = {};
-        (Array.isArray(inv) ? inv : []).forEach(row => {
-          const key = `${row["Item Type"]}|${row["Item Description"]}`;
-          map[key] = Number(row["Avg Purchase Price"]);
-        });
-        setAvgPurchaseMap(map);
-      } catch {
-        setAvgPurchaseMap({});
-      }
+  // Fetch summary only when button is clicked
+  const fetchSummary = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/.netlify/functions/salesSummary");
+      const result = await res.json();
+      setData(Array.isArray(result) ? result : []);
+    } catch (err) {
+      setData([]);
     }
-    fetchInventory();
-  }, []);
+    setLoading(false);
+  };
 
-  useEffect(() => {
-    async function fetchSummary() {
-      setLoading(true);
-      try {
-        const res = await fetch("/.netlify/functions/getSalesSummary");
-        const result = await res.json();
-        let rows = result.rows || result;
-        // If array-of-arrays, convert to array-of-objects
-        if (Array.isArray(rows) && rows.length && Array.isArray(rows[0])) {
-          const headers = ["Date", "Item Type", "Item Description", "Quantity", "Price", "Total", "Transaction Type"];
-          rows = rows.map(arr => {
-            const obj = {};
-            headers.forEach((h, i) => { obj[h] = arr[i]; });
-            return obj;
-          });
-        }
-        // Only keep 'Sell' transactions
-        rows = rows.filter(r => r["Transaction Type"] === "Sell" || r["Transaction Type"] === undefined);
-        setData(Array.isArray(rows) ? rows : []);
-      } catch (err) {
-        setData([]);
-      }
-      setLoading(false);
-    }
-    fetchSummary();
-  }, []);
-
-  // Group by date
+  // Group by date (use backend date as-is)
   const grouped = {};
   data.forEach(row => {
-    const date = row.Date;
+    let date = row.date || 'Unknown';
     if (!grouped[date]) grouped[date] = [];
     grouped[date].push(row);
   });
 
-  // Filter by date
+  // Default: show only current day's sales summary
   let filteredDates = Object.keys(grouped);
-  if (fromDate || toDate) {
+  const today = new Date();
+  const todayStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+  if (!fromDate && !toDate) {
+    filteredDates = filteredDates.filter(date => date === todayStr);
+  } else {
     filteredDates = filteredDates.filter(date => {
-      // Format: DD-MM-YYYY
-      const [d, m, y] = date.split("-");
+      // Convert DD-MM-YYYY to YYYY-MM-DD for comparison
+      const [d, m, y] = date.split('-');
       const dISO = `${y}-${m}-${d}`;
       const from = fromDate ? fromDate : dISO;
       const to = toDate ? toDate : dISO;
       return dISO >= from && dISO <= to;
     });
-  } else {
-    // Show only current date sales if no filter
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const yyyy = today.getFullYear();
-    const currentDate = `${dd}-${mm}-${yyyy}`;
-    filteredDates = filteredDates.filter(date => date === currentDate);
   }
-
   // Sort dates latest first
   filteredDates.sort((a, b) => {
-    const [da, ma, ya] = a.split("-");
-    const [db, mb, yb] = b.split("-");
+    const [da, ma, ya] = a.split('-');
+    const [db, mb, yb] = b.split('-');
     return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
   });
-
-  // Prepare filtered data for CSV export
   const filteredRows = filteredDates.flatMap(date => grouped[date]);
 
   return (
     <div className="w-[60%] max-w-full mx-auto mb-8 flex flex-col items-center">
       <button
         className={`w-full px-4 py-3 rounded-xl shadow text-base font-semibold border-2 transition-colors mb-4
-          ${showSummary
-            ? 'bg-[#1b262c] text-blue-300 border-[#3a506b] hover:bg-[#232b3a]'
-            : 'bg-[#232b3a] text-gray-100 border-[#3a506b] hover:bg-[#1b262c]'}
+          ${showSummary ? 'bg-[#1b262c] text-blue-300 border-[#3a506b] hover:bg-[#232b3a]' : 'bg-[#232b3a] text-gray-100 border-[#3a506b] hover:bg-[#1b262c]'}
         `}
-        onClick={() => setShowSummary(v => !v)}
+        onClick={() => {
+          setShowSummary(v => !v);
+          if (!showSummary) fetchSummary();
+        }}
         type="button"
       >
         {showSummary ? 'Hide Daily Sales Summary' : 'Show Daily Sales Summary'}
@@ -165,41 +117,15 @@ export default function SalesSummary() {
             ) : (
               filteredDates.map(date => {
                 const rows = grouped[date];
-                const totalSales = rows.reduce((sum, r) => sum + Number(r.Price) * Number(r.Quantity), 0);
-                // Calculate daily margin (weighted by total cost)
-                let totalCost = 0, totalProfit = 0;
-                rows.forEach(r => {
-                  const key = `${r["Item Type"]}|${r["Item Description"]}`;
-                  const avgPurchase = avgPurchaseMap[key] || 0;
-                  const salePrice = Number(r["Price"]);
-                  const qty = Number(r["Quantity"]);
-                  if (avgPurchase > 0 && qty > 0) {
-                    totalCost += avgPurchase * qty;
-                    totalProfit += (salePrice - avgPurchase) * qty;
-                  }
-                });
-                let dailyMarginNum = null;
-                let dailyMargin = '-';
-                if (totalCost > 0) {
-                  dailyMarginNum = (totalProfit / totalCost) * 100;
-                  dailyMarginNum = Math.round(dailyMarginNum * 10) / 10;
-                  dailyMargin = (dailyMarginNum > 0 ? '+' : '') + dailyMarginNum.toFixed(1) + '%';
-                }
+                // Calculate daily total sales and margin from backend data
+                const totalSales = rows.reduce((sum, r) => sum + Number(r.sellTotal), 0);
+                const totalMargin = rows.reduce((sum, r) => sum + Number(r.margin), 0);
                 return (
-                  <div key={date} className="relative p-4 rounded-lg shadow border-l-4 space-y-1 transition-all mb-4
-                    border-yellow-700 bg-[#1b262c]">
+                  <div key={date} className="relative p-4 rounded-lg shadow border-l-4 space-y-1 transition-all mb-4 border-yellow-700 bg-[#1b262c]">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="font-semibold text-yellow-200">Date: {date}</div>
                       <div className="font-semibold text-yellow-200">Total: ₹{totalSales.toLocaleString()}</div>
-                      <div className="font-semibold text-yellow-200 flex items-center">
-                        Margin: {dailyMarginNum === null ? (
-                          <span className="text-gray-400 ml-1">-</span>
-                        ) : dailyMarginNum < 0 ? (
-                          <span className="text-red-500 font-bold flex items-center ml-1">{dailyMargin} <span className="ml-1">▼</span></span>
-                        ) : (
-                          <span className="text-green-500 font-bold flex items-center ml-1">{dailyMargin} <span className="ml-1">▲</span></span>
-                        )}
-                      </div>
+                      <div className="font-semibold text-yellow-200 flex items-center">Margin: {totalMargin.toFixed(2)}%</div>
                       <button
                         className="border-2 border-[#3a506b] bg-[#232b3a] text-gray-100 hover:bg-[#1b262c] px-3 py-2 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                         onClick={() => setExpanded(exp => ({ ...exp, [date]: !exp[date] }))}
@@ -210,46 +136,30 @@ export default function SalesSummary() {
                     {expanded[date] && (
                       <div className="bg-[#232b3a] rounded p-3 mt-3 shadow text-sm text-gray-100">
                         <div className="w-full">
-                          <div className="grid grid-cols-6 gap-2 font-semibold text-yellow-200 border-b border-[#3a506b] pb-2 mb-2">
+                          <div className="grid grid-cols-9 gap-2 font-semibold text-yellow-200 border-b border-[#3a506b] pb-2 mb-2">
+                            <div>Date</div>
                             <div>Item Type</div>
                             <div>Description</div>
-                            <div>Quantity</div>
-                            <div>Price</div>
-                            <div>Total</div>
+                            <div>Sell Qty</div>
+                            <div>Sell Price</div>
+                            <div>Sell Total</div>
+                            <div>Cost Price</div>
+                            <div>Cost Total</div>
                             <div>Margin</div>
                           </div>
-                          {rows.map((r, idx) => {
-                            const key = `${r["Item Type"]}|${r["Item Description"]}`;
-                            const avgPurchase = avgPurchaseMap[key] || 0;
-                            const salePrice = Number(r["Price"]);
-                            let margin = '';
-                            let marginNum = null;
-                            if (avgPurchase > 0) {
-                              marginNum = ((salePrice - avgPurchase) / avgPurchase) * 100;
-                              marginNum = Math.round(marginNum * 10) / 10;
-                              margin = (marginNum > 0 ? '+' : '') + marginNum.toFixed(1) + '%';
-                            } else {
-                              margin = '-';
-                            }
-                            return (
-                              <div key={idx} className="grid grid-cols-6 gap-2 border-b border-[#3a506b] last:border-b-0 py-2 items-center">
-                                <div>{r["Item Type"]}</div>
-                                <div>{r["Item Description"]}</div>
-                                <div>{r["Quantity"]}</div>
-                                <div>₹{Number(r["Price"]).toFixed(2)}</div>
-                                <div>₹{(Number(r["Price"]) * Number(r["Quantity"]) || 0).toLocaleString()}</div>
-                                <div>
-                                  {marginNum === null ? (
-                                    <span className="text-gray-400">-</span>
-                                  ) : marginNum < 0 ? (
-                                    <span className="text-red-500 font-bold flex items-center">{margin} <span className="ml-1">▼</span></span>
-                                  ) : (
-                                    <span className="text-green-500 font-bold flex items-center">{margin} <span className="ml-1">▲</span></span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+                          {rows.map((r, idx) => (
+                            <div key={idx} className="grid grid-cols-9 gap-2 border-b border-[#3a506b] last:border-b-0 py-2 items-center">
+                              <div>{r.date}</div>
+                              <div>{r.itemType}</div>
+                              <div>{r.itemDesc}</div>
+                              <div>{r.sellQty}</div>
+                              <div>₹{Number(r.sellTotal / r.sellQty || 0).toFixed(2)}</div>
+                              <div>₹{Number(r.sellTotal).toLocaleString()}</div>
+                              <div>₹{Number(r.costPrice).toFixed(2)}</div>
+                              <div>₹{Number(r.costTotal).toLocaleString()}</div>
+                              <div>{Number(r.margin).toFixed(2)}%</div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

@@ -9,7 +9,7 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
   const [loading, setLoading] = useState(true);
   const [showPurchase, setShowPurchase] = useState(false);
   const [showSales, setShowSales] = useState(false);
-  const [showMarkup, setShowMarkup] = useState(false);
+  //const [showMarkup, setShowMarkup] = useState(false);
   const [showMargin, setShowMargin] = useState(false);
   const [typeFilter, setTypeFilter] = useState([]); // Multi-select
   const [descFilter, setDescFilter] = useState([]); // Multi-select
@@ -105,13 +105,13 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
     { key: 'Avg Sale Price', label: 'Avg Sale Price', color: sellColor, isCurrency: true },
     { key: 'Total Sales Value', label: 'Total Sales Value', color: sellColor, isCurrency: true },
   ];
-  const markupCol = { key: 'Markup', label: 'Markup', color: undefined, isCurrency: false };
+  //const markupCol = { key: 'Markup', label: 'Markup', color: undefined, isCurrency: false };
   const marginCol = { key: 'Margin', label: 'Margin', color: undefined, isCurrency: false };
 
   let visibleCols = [...baseCols];
   if (showPurchase) visibleCols = visibleCols.concat(purchaseCols);
   if (showSales) visibleCols = visibleCols.concat(salesCols);
-  if (showMarkup) visibleCols = visibleCols.concat([markupCol]);
+  //if (showMarkup) visibleCols = visibleCols.concat([markupCol]);
   if (showMargin) visibleCols = visibleCols.concat([marginCol]);
   const colCount = visibleCols.length;
 
@@ -144,13 +144,13 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
           >
             {showSales ? 'Hide' : 'Expand'} Sales Details
           </button>
-          <button
+          {/* <button
             className="text-xs px-3 py-1 rounded border font-semibold transition-colors duration-150 shadow-sm"
             style={{ background: showMarkup ? '#3b82f6' : lighten('#3b82f6', 0.7), color: showMarkup ? '#fff' : '#3b82f6', borderColor: lighten('#3b82f6', 0.5) }}
             onClick={() => setShowMarkup((v) => !v)}
           >
             {showMarkup ? 'Hide' : 'Expand'} Markup
-          </button>
+          </button> */}
           <button
             className="text-xs px-3 py-1 rounded border font-semibold transition-colors duration-150 shadow-sm"
             style={{ background: showMargin ? '#6366f1' : lighten('#6366f1', 0.7), color: showMargin ? '#fff' : '#6366f1', borderColor: lighten('#6366f1', 0.5) }}
