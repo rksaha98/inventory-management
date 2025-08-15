@@ -181,6 +181,7 @@ function Header() {
 function App() {
   const [inventoryData, setInventoryData] = React.useState([]);
   const [showTransactions, setShowTransactions] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const logsRef = React.useRef(null);
   React.useEffect(() => {
     async function fetchInventory() {
@@ -201,6 +202,9 @@ function App() {
     }
   }, [showTransactions]);
 
+  // Unified refresh handler
+  const handleRefresh = () => setRefreshKey(k => k + 1);
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-start relative overflow-x-hidden py-10">
       {/* Universal animated gradient background for the whole page */}
@@ -208,8 +212,8 @@ function App() {
       {/* Futuristic Title Card at the top */}
       <FuturisticTitleCard />
       {/* Inventory Table rendered directly, all styling handled in component */}
-      <InventoryTable />
-      <EntryForm inventoryData={inventoryData} />
+      <InventoryTable refreshTrigger={refreshKey} />
+      <EntryForm inventoryData={inventoryData} onSuccess={handleRefresh} />
       {/* Show Transactions Button */}
       <div className="w-[60%] max-w-full mx-auto mb-8 flex justify-center">
         <button
@@ -227,7 +231,7 @@ function App() {
       {/* Transaction Logs Section */}
       {showTransactions && (
         <div ref={logsRef} className="w-full flex flex-col items-center">
-          <TransactionTable />
+          <TransactionTable onSuccess={handleRefresh} />
         </div>
       )}
       <SalesSummary />

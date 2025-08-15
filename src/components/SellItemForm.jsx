@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function SellItemForm() {
+export default function SellItemForm({ onSuccess }) {
   const [form, setForm] = useState({
     itemType: '',
     itemDescription: '',
@@ -31,6 +31,7 @@ export default function SellItemForm() {
       if (res.ok) {
         setStatus('✅ Item sold successfully!');
         setForm({ itemType: '', itemDescription: '', quantity: '', price: '', mode: '', note: '' });
+        if (onSuccess) onSuccess(); // trigger summary refresh
       } else {
         throw new Error(result.error || 'Failed to sell item');
       }

@@ -4,7 +4,7 @@ function formatCurrency(num) {
   return "₹" + Number(num).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
 
-export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec10e", lowStockColor = "#f43f5e", lowStockQty = 5 }) {
+export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec10e", lowStockColor = "#f43f5e", lowStockQty = 5, refreshTrigger }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPurchase, setShowPurchase] = useState(false);
@@ -17,23 +17,29 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
   const [descSearch, setDescSearch] = useState("");
   const [typeActiveIdx, setTypeActiveIdx] = useState(0);
   const [descActiveIdx, setDescActiveIdx] = useState(0);
+  const [sortInStock, setSortInStock] = useState(null); // null, 'asc', 'desc'
   const typeRef = useRef();
   const descRef = useRef();
 
-  useEffect(() => {
-    async function fetchSummary() {
-      setLoading(true);
-      try {
-        const res = await fetch("/.netlify/functions/getInventorySummary");
-        const json = await res.json();
-        setData(Array.isArray(json) ? json : []);
-      } catch (err) {
-        setData([]);
-      }
-      setLoading(false);
+  // Modular fetch logic
+  const fetchSummary = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/.netlify/functions/getInventorySummary");
+      const json = await res.json();
+      setData(Array.isArray(json) ? json : []);
+    } catch (err) {
+      setData([]);
     }
-    fetchSummary();
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary, refreshTrigger]);
+
+  // Expose refreshSummary for parent-triggered refresh
+  const refreshSummary = fetchSummary;
 
   // Unique types/descriptions for filter dropdowns
   const itemTypes = Array.from(new Set(data.map((d) => d["Item Type"])));
@@ -50,16 +56,18 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  // Filtered and sorted summary
-  const summary = data
-    .filter((item) => {
-      const typeMatch = typeFilter.length === 0 || typeFilter.includes(item["Item Type"]);
-      const descMatch = descFilter.length === 0 || descFilter.includes(item["Item Description"]);
-      return typeMatch && descMatch;
-    })
-    .sort(
-      (a, b) => b["In Stock"] - a["In Stock"] || a["Item Description"].localeCompare(b["Item Description"])
-    );
+  // Filtered summary (no sort by default)
+  let filteredSummary = data.filter((item) => {
+    const typeMatch = typeFilter.length === 0 || typeFilter.includes(item["Item Type"]);
+    const descMatch = descFilter.length === 0 || descFilter.includes(item["Item Description"]);
+    return typeMatch && descMatch;
+  });
+  // Sort if requested
+  if (sortInStock === 'asc') {
+    filteredSummary = [...filteredSummary].sort((a, b) => a["In Stock"] - b["In Stock"]);
+  } else if (sortInStock === 'desc') {
+    filteredSummary = [...filteredSummary].sort((a, b) => b["In Stock"] - a["In Stock"]);
+  }
 
   // Color helpers
   const lighten = (hex, amt) => {
@@ -81,7 +89,7 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
   const baseCols = [
     { key: 'Item Type', label: 'Item Type', filter: true },
     { key: 'Item Description', label: 'Item Description', filter: true },
-    { key: 'In Stock', label: 'In Stock' },
+    { key: 'In Stock', label: 'In Stock', sort: true },
   ];
   const purchaseCols = [
     { key: 'Total Purchased', label: 'Total Purchased', color: buyColor },
@@ -158,6 +166,41 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
                 {visibleCols.map((col, i) => (
                   <th key={col.key} className="px-3 py-2 border-b border-[#3a506b] text-left relative font-semibold text-gray-200">
                     <span>{col.label}</span>
+                    {/* Sort button for In Stock */}
+                    {col.key === 'In Stock' && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 6 }}>
+                        <button
+                          className="p-1 rounded border border-transparent focus:outline-none flex flex-col items-center justify-center"
+                          title="Sort by In Stock"
+                          onClick={() => setSortInStock(sortInStock === 'desc' ? 'asc' : sortInStock === 'asc' ? null : 'desc')}
+                          tabIndex={0}
+                          aria-label="Sort by In Stock"
+                          style={{ width: 18, height: 18, background: 'none', boxShadow: 'none' }}
+                        >
+                          {/* Default: two equal horizontal lines */}
+                          {sortInStock === null && (
+                            <span style={{ display: 'block', width: 14, height: 14 }}>
+                              <div style={{ height: 3, width: 14, background: '#bbb', borderRadius: 2, marginBottom: 2 }}></div>
+                              <div style={{ height: 3, width: 14, background: '#bbb', borderRadius: 2 }}></div>
+                            </span>
+                          )}
+                          {/* Ascending: top line small, bottom line big */}
+                          {sortInStock === 'asc' && (
+                            <span style={{ display: 'block', width: 14, height: 14 }}>
+                              <div style={{ height: 3, width: 7, background: '#bbb', borderRadius: 2, marginBottom: 2, marginLeft: 3.5 }}></div>
+                              <div style={{ height: 3, width: 14, background: '#bbb', borderRadius: 2 }}></div>
+                            </span>
+                          )}
+                          {/* Descending: top line big, bottom line small */}
+                          {sortInStock === 'desc' && (
+                            <span style={{ display: 'block', width: 14, height: 14 }}>
+                              <div style={{ height: 3, width: 14, background: '#bbb', borderRadius: 2, marginBottom: 2 }}></div>
+                              <div style={{ height: 3, width: 7, background: '#bbb', borderRadius: 2, marginLeft: 3.5 }}></div>
+                            </span>
+                          )}
+                        </button>
+                      </span>
+                    )}
                     {/* Filter button for Item Type and Item Description */}
                     {col.filter && (
                       <button
@@ -171,7 +214,7 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
                         tabIndex={0}
                         aria-label={`Filter ${col.label}`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0013 13.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 017 17v-3.586a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0013 13.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 007 17v-3.586a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" /></svg>
                       </button>
                     )}
                     {/* Dropdown for Item Type (multi-select, keyboard nav) */}
@@ -318,14 +361,14 @@ export default function InventoryTable({ buyColor = "#8dc540", sellColor = "#fec
                     Loading...
                   </td>
                 </tr>
-              ) : summary.length === 0 ? (
+              ) : filteredSummary.length === 0 ? (
                 <tr>
                   <td colSpan={colCount} className="text-center py-6 text-gray-400 bg-[#232b3a]">
                     No inventory data.
                   </td>
                 </tr>
               ) : (
-                summary.map((item, idx) => {
+                filteredSummary.map((item, idx) => {
                   const isLow = item["In Stock"] <= lowStockQty;
                   return (
                     <tr

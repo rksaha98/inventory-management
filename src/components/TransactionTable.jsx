@@ -7,7 +7,7 @@ const API_URL = '/.netlify/functions/getTransactionsFromGoogle';
 const DELETE_URL = '/.netlify/functions/deleteTransaction';
 const EDIT_URL = '/.netlify/functions/editTransaction';
 
-export default function TransactionTable() {
+export default function TransactionTable({ onSuccess }) {
   const [transactions, setTransactions] = useState([]);
   const [filterType, setFilterType] = useState('All');
   const [fromDate, setFromDate] = useState('');
@@ -52,7 +52,10 @@ export default function TransactionTable() {
         body: JSON.stringify({ id })
       });
       const result = await res.json();
-      if (result.success) fetchTransactions();
+      if (result.success) {
+        fetchTransactions();
+        if (onSuccess) onSuccess(); // trigger summary refresh
+      }
     } catch (err) {
       console.error('❌ Error deleting:', err);
     }
@@ -87,8 +90,9 @@ export default function TransactionTable() {
       });
       const result = await res.json();
       if (result.success) {
-        setEditId(null);
         fetchTransactions();
+        setEditId(null);
+        if (onSuccess) onSuccess(); // trigger summary refresh
       } else {
         console.error('❌ Save error:', result.error);
       }

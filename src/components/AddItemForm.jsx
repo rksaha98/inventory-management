@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function AddItemForm() {
+export default function AddItemForm({ onSuccess }) {
   const [form, setForm] = useState({
     itemType: '',
     itemDescription: '',
@@ -31,6 +31,7 @@ export default function AddItemForm() {
       if (res.ok) {
         setStatus('✅ Item added successfully!');
         setForm({ itemType: '', itemDescription: '', quantity: '', price: '', mode: '', note: '' });
+        if (onSuccess) onSuccess(); // trigger summary refresh
       } else {
         throw new Error(result.error || 'Failed to add item');
       }

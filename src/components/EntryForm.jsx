@@ -123,6 +123,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
     setForm(f => ({ ...f, [name]: value }));
   };
 
+  // Transaction submit logic (add/sell/edit/delete)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -155,7 +156,7 @@ export default function EntryForm({ onSuccess, inventoryData = [] }) {
       setForm(initialState);
       setItemTypeInput('');
       setItemDescInput('');
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(); // trigger summary refresh
     } catch (err) {
       setError('Error: ' + err.message);
     } finally {
